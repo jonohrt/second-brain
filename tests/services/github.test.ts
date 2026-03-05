@@ -100,4 +100,77 @@ describe('GitHubService', () => {
       expect(pr).toBeNull();
     });
   });
+
+  describe('getStandupActivity', () => {
+    it('groups events by repo with merged PRs and push activity', async () => {
+      const mockEvents = [
+        {
+          type: 'PushEvent',
+          repo: { name: 'org/core-ui' },
+          payload: { ref: 'refs/heads/feature/dashboard' },
+          created_at: '2026-03-05T16:00:00Z',
+        },
+        {
+          type: 'PullRequestEvent',
+          repo: { name: 'org/core-ui' },
+          payload: { action: 'merged', number: 42, pull_request: { number: 42, head: { ref: 'hotfix' } } },
+          created_at: '2026-03-05T15:00:00Z',
+        },
+        // Yesterday: should not appear
+        {
+          type: 'PushEvent',
+          repo: { name: 'org/core-ui' },
+          payload: { ref: 'refs/heads/old-branch' },
+          created_at: '2026-03-04T10:00:00Z',
+        },
+      ];
+
+      // First call: fetchEvents
+      mockExecFile.mockResolvedValueOnce({ stdout: JSON.stringify(mockEvents), stderr: '' });
+      // Second call: fetchPRTitle for merged PR #42
+      mockExecFile.mockResolvedValueOnce({ stdout: JSON.stringify({ title: 'Fix auth flow' }), stderr: '' });
+      // Third call: findPRForBranch for push to feature/dashboard
+      mockExecFile.mockResolvedValueOnce({
+        stdout: JSON.stringify([{ number: 55, title: 'Dashboard redesign', state: 'open' }]),
+        stderr: '',
+      });
+
+      const result = await github.getStandupActivity();
+
+      expect(result).not.toBeNull();
+      expect(result!.date).toBe('2026-03-05');
+      expect(result!.repos).toHaveLength(1);
+      expect(result!.repos[0].repo).toBe('org/core-ui');
+      expect(result!.repos[0].mergedPRs).toEqual([{ number: 42, title: 'Fix auth flow' }]);
+      expect(result!.repos[0].pushes).toEqual([{ branch: 'feature/dashboard', prNumber: 55, prTitle: 'Dashboard redesign' }]);
+    });
+
+    it('returns null when no events exist', async () => {
+      mockExecFile.mockResolvedValueOnce({ stdout: '[]', stderr: '' });
+
+      const result = await github.getStandupActivity();
+      expect(result).toBeNull();
+    });
+
+    it('skips pushes to default branches', async () => {
+      const mockEvents = [
+        {
+          type: 'PushEvent',
+          repo: { name: 'org/repo' },
+          payload: { ref: 'refs/heads/main' },
+          created_at: '2026-03-05T10:00:00Z',
+        },
+        {
+          type: 'PushEvent',
+          repo: { name: 'org/repo' },
+          payload: { ref: 'refs/heads/production' },
+          created_at: '2026-03-05T09:00:00Z',
+        },
+      ];
+      mockExecFile.mockResolvedValueOnce({ stdout: JSON.stringify(mockEvents), stderr: '' });
+
+      const result = await github.getStandupActivity();
+      expect(result).toBeNull();
+    });
+  });
 });

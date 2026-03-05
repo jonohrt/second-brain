@@ -10,6 +10,19 @@ export interface GitHubEvent {
   created_at: string;
 }
 
+export interface StandupRepo {
+  repo: string;
+  mergedPRs: { number: number; title: string }[];
+  pushes: { branch: string; prNumber?: number; prTitle?: string }[];
+}
+
+export interface StandupActivity {
+  date: string; // YYYY-MM-DD
+  repos: StandupRepo[];
+}
+
+const DEFAULT_BRANCHES = new Set(['refs/heads/main', 'refs/heads/master', 'refs/heads/production', 'refs/heads/develop']);
+
 export class GitHubService {
   constructor(private username: string) {}
 
@@ -51,5 +64,83 @@ export class GitHubService {
     } catch {
       return null;
     }
+  }
+
+  async getStandupActivity(): Promise<StandupActivity | null> {
+    const events = await this.fetchEvents();
+
+    // Filter to relevant event types
+    const relevant = events.filter(
+      (e) => e.type === 'PullRequestEvent' || e.type === 'PushEvent'
+    );
+    if (relevant.length === 0) return null;
+
+    // Find the last active day (calendar date of most recent event)
+    const lastDate = relevant[0].created_at.slice(0, 10);
+
+    // Filter to only that day
+    const dayEvents = relevant.filter((e) => e.created_at.startsWith(lastDate));
+
+    // Separate merged PRs and pushes
+    const mergedPREvents = dayEvents.filter(
+      (e) => e.type === 'PullRequestEvent' && (e.payload as any).action === 'merged'
+    );
+    const pushEvents = dayEvents.filter(
+      (e) => e.type === 'PushEvent' && !DEFAULT_BRANCHES.has((e.payload as any).ref)
+    );
+
+    if (mergedPREvents.length === 0 && pushEvents.length === 0) return null;
+
+    // Group by repo
+    const repoMap = new Map<string, StandupRepo>();
+
+    const getRepo = (name: string): StandupRepo => {
+      if (!repoMap.has(name)) {
+        repoMap.set(name, { repo: name, mergedPRs: [], pushes: [] });
+      }
+      return repoMap.get(name)!;
+    };
+
+    // Process merged PRs — fetch titles
+    for (const event of mergedPREvents) {
+      const prPayload = event.payload as any;
+      const prNumber = prPayload.number ?? prPayload.pull_request?.number;
+      const title = await this.fetchPRTitle(event.repo.name, prNumber);
+      const repo = getRepo(event.repo.name);
+      // Deduplicate
+      if (!repo.mergedPRs.some((p) => p.number === prNumber)) {
+        repo.mergedPRs.push({ number: prNumber, title: title ?? `PR #${prNumber}` });
+      }
+    }
+
+    // Process pushes — deduplicate by branch, find associated PRs
+    const seenBranches = new Set<string>();
+    for (const event of pushEvents) {
+      const ref = (event.payload as any).ref as string;
+      const branch = ref.replace('refs/heads/', '');
+      const key = `${event.repo.name}:${branch}`;
+      if (seenBranches.has(key)) continue;
+      seenBranches.add(key);
+
+      // Skip if this branch was already merged (avoid double-reporting)
+      const repo = getRepo(event.repo.name);
+      const pr = await this.findPRForBranch(event.repo.name, branch);
+      if (pr && repo.mergedPRs.some((p) => p.number === pr.number)) continue;
+
+      repo.pushes.push({
+        branch,
+        prNumber: pr?.number,
+        prTitle: pr?.title,
+      });
+    }
+
+    // Filter out empty repos
+    const repos = Array.from(repoMap.values()).filter(
+      (r) => r.mergedPRs.length > 0 || r.pushes.length > 0
+    );
+
+    if (repos.length === 0) return null;
+
+    return { date: lastDate, repos };
   }
 }
