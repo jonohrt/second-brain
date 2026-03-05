@@ -1,7 +1,42 @@
 import { z } from 'zod';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { Services } from '../server.js';
 import type { ContextEntry } from '../../types.js';
+
+const execFileAsync = promisify(execFile);
+
+async function createAppleReminder(title: string, remindAt: Date): Promise<string | null> {
+  const dateStr = remindAt.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const timeStr = remindAt.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  });
+  const appleDate = `${dateStr} at ${timeStr}`;
+  const escapedTitle = title.replace(/"/g, '\\"');
+
+  const script = `tell application "Reminders"
+  tell list "Reminders"
+    make new reminder with properties {name:"${escapedTitle}", remind me date:date "${appleDate}"}
+  end tell
+end tell`;
+
+  try {
+    await execFileAsync('osascript', ['-e', script]);
+    return null;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return `Reminder creation failed: ${message}`;
+  }
+}
 
 async function captureEntry(entry: ContextEntry, services: Services): Promise<string> {
   const vaultPath = services.vault.writeEntry(entry);
@@ -174,13 +209,14 @@ export function registerCaptureTools(server: McpServer, services: Services): voi
       inputSchema: {
         title: z.string().describe('Short description of the task'),
         content: z.string().optional().describe('Additional details or context'),
+        remind_at: z.string().optional().describe('ISO 8601 datetime for an Apple Reminder (e.g. "2026-03-05T07:00:00")'),
         project: z.string().optional().describe('Project name (auto-detected if omitted)'),
         repo: z.string().optional().describe('Repository name (auto-detected if omitted)'),
         branch: z.string().optional().describe('Git branch name (auto-detected if omitted)'),
         tags: z.array(z.string()).optional().describe('Tags for categorization'),
       },
     },
-    async ({ title, content, project, repo, branch, tags }) => {
+    async ({ title, content, remind_at, project, repo, branch, tags }) => {
       const now = new Date();
       const entry: ContextEntry = {
         type: 'task',
@@ -189,13 +225,25 @@ export function registerCaptureTools(server: McpServer, services: Services): voi
         project,
         repo,
         branch,
-        metadata: { status: 'open', tags: tags ?? [] },
+        metadata: { status: 'open', tags: tags ?? [], ...(remind_at ? { remind_at } : {}) },
         createdAt: now,
         updatedAt: now,
       };
 
       const result = await captureEntry(entry, services);
-      return { content: [{ type: 'text' as const, text: result }] };
+
+      let reminderNote = '';
+      if (remind_at) {
+        const remindDate = new Date(remind_at);
+        const warning = await createAppleReminder(title, remindDate);
+        if (warning) {
+          reminderNote = ` ${warning}`;
+        } else {
+          reminderNote = ` Reminder set for ${remindDate.toLocaleString()}.`;
+        }
+      }
+
+      return { content: [{ type: 'text' as const, text: result + reminderNote }] };
     }
   );
 }
