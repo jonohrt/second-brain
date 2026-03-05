@@ -50,18 +50,28 @@ export class SupabaseService {
 
   async searchByEmbedding(
     embedding: number[],
-    opts?: { project?: string; repo?: string; type?: ContextType; limit?: number }
+    opts?: { project?: string; repo?: string; type?: ContextType; tag?: string; limit?: number }
   ): Promise<ContextEntry[]> {
     const { data, error } = await this.client.rpc('match_context_entries', {
       query_embedding: embedding,
-      match_count: opts?.limit ?? 10,
+      match_count: opts?.tag ? (opts?.limit ?? 10) * 3 : (opts?.limit ?? 10),
       filter_project: opts?.project ?? null,
       filter_repo: opts?.repo ?? null,
       filter_type: opts?.type ?? null,
     });
 
     if (error) throw new Error(`Supabase search failed: ${error.message}`);
-    return (data ?? []).map(this.toContextEntry);
+    let results = (data ?? []).map(this.toContextEntry);
+
+    if (opts?.tag) {
+      results = results.filter((entry: ContextEntry) => {
+        const tags = entry.metadata?.tags;
+        return Array.isArray(tags) && tags.includes(opts.tag);
+      });
+      results = results.slice(0, opts?.limit ?? 10);
+    }
+
+    return results;
   }
 
   async getByBranch(branch: string, repo?: string, project?: string): Promise<ContextEntry[]> {
