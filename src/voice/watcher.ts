@@ -19,7 +19,7 @@ export class VoiceWatcher {
       return;
     }
 
-    const files = readdirSync(this.watchDir).filter((f) => f.endsWith('.m4a'));
+    const files = readdirSync(this.watchDir).filter((f) => f.match(/\.(m4a|wav|mp3|ogg|flac|caf)$/));
     for (const file of files) {
       await this.handleFile(join(this.watchDir, file));
     }
@@ -34,7 +34,7 @@ export class VoiceWatcher {
     console.log(`Watching for voice memos in: ${this.watchDir}`);
 
     watch(this.watchDir, (_eventType, filename) => {
-      if (!filename || !filename.endsWith('.m4a')) return;
+      if (!filename || !filename.match(/\.(m4a|wav|mp3|ogg|flac|caf)$/)) return;
 
       const filePath = join(this.watchDir, filename);
 
