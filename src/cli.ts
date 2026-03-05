@@ -51,11 +51,22 @@ program
   .command('session-context')
   .description('Output context for current session (called by SessionStart hook)')
   .action(async () => {
-    const chunks: Buffer[] = [];
-    for await (const chunk of process.stdin) {
-      chunks.push(chunk);
+    let input: { cwd: string };
+    try {
+      const chunks: Buffer[] = [];
+      for await (const chunk of process.stdin) {
+        chunks.push(chunk);
+      }
+      const raw = Buffer.concat(chunks).toString().trim();
+      if (!raw) {
+        console.error('second-brain: no stdin provided, skipping session-context');
+        return;
+      }
+      input = JSON.parse(raw);
+    } catch {
+      console.error('second-brain: invalid or missing stdin for session-context, skipping');
+      return;
     }
-    const input = JSON.parse(Buffer.concat(chunks).toString());
 
     const context = await handleSessionStart(input);
     if (context) {
