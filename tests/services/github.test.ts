@@ -76,4 +76,28 @@ describe('GitHubService', () => {
       expect(title).toBeNull();
     });
   });
+
+  describe('findPRForBranch', () => {
+    it('finds an open PR matching the branch', async () => {
+      mockExecFile.mockResolvedValue({
+        stdout: JSON.stringify([{ number: 55, title: 'Dashboard redesign', state: 'open' }]),
+        stderr: '',
+      });
+
+      const pr = await github.findPRForBranch('optimumenergyco/core-ui', 'feature/dashboard');
+
+      expect(mockExecFile).toHaveBeenCalledWith('gh', [
+        'api', 'repos/optimumenergyco/core-ui/pulls?head=optimumenergyco:feature/dashboard&state=all&per_page=1',
+        '--hostname', 'github.com',
+      ]);
+      expect(pr).toEqual({ number: 55, title: 'Dashboard redesign' });
+    });
+
+    it('returns null when no PR exists for branch', async () => {
+      mockExecFile.mockResolvedValue({ stdout: '[]', stderr: '' });
+
+      const pr = await github.findPRForBranch('org/repo', 'no-pr-branch');
+      expect(pr).toBeNull();
+    });
+  });
 });
