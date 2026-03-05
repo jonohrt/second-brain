@@ -113,7 +113,7 @@ program
     const vault = new VaultService(config.vaultPath, config.contextDir);
     const embeddings = new EmbeddingsService(config.ollama.baseUrl, config.ollama.model);
     const supabase = new SupabaseService(config.supabase.url, config.supabase.key);
-    const whisper = new WhisperService(config.voice.whisperBinary);
+    const whisper = new WhisperService(config.voice.whisperBinary, config.voice.whisperModel);
     const tracker = new ProcessedTracker(config.voice.processedLog);
     const processor = new VoiceProcessor(whisper, vault, embeddings, supabase, tracker);
     const watcher = new VoiceWatcher(config.voice.watchDir, processor);

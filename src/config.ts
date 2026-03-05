@@ -47,7 +47,8 @@ export function loadConfig(configPath: string): Config {
     ? {
         watchDir: expandTilde(voice.watch_dir),
         processedLog: expandTilde(voice.processed_log ?? '~/.second-brain/processed-voice.json'),
-        whisperBinary: voice.whisper_binary ?? 'whisper-cpp',
+        whisperBinary: voice.whisper_binary ?? 'whisper-cli',
+        whisperModel: voice.whisper_model ? expandTilde(voice.whisper_model) : '',
       }
     : undefined;
 

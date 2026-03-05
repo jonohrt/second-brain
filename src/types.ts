@@ -48,6 +48,7 @@ export interface Config {
     watchDir: string;
     processedLog: string;
     whisperBinary: string;
+    whisperModel: string;
   };
 }
 
