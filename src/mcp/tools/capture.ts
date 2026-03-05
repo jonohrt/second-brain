@@ -165,4 +165,37 @@ export function registerCaptureTools(server: McpServer, services: Services): voi
       return { content: [{ type: 'text' as const, text: result }] };
     }
   );
+
+  server.registerTool(
+    'capture_task',
+    {
+      description:
+        'Capture a task or TODO. Only title is required — project, repo, and branch are auto-detected from the working directory.',
+      inputSchema: {
+        title: z.string().describe('Short description of the task'),
+        content: z.string().optional().describe('Additional details or context'),
+        project: z.string().optional().describe('Project name (auto-detected if omitted)'),
+        repo: z.string().optional().describe('Repository name (auto-detected if omitted)'),
+        branch: z.string().optional().describe('Git branch name (auto-detected if omitted)'),
+        tags: z.array(z.string()).optional().describe('Tags for categorization'),
+      },
+    },
+    async ({ title, content, project, repo, branch, tags }) => {
+      const now = new Date();
+      const entry: ContextEntry = {
+        type: 'task',
+        title,
+        content: content ?? title,
+        project,
+        repo,
+        branch,
+        metadata: { status: 'open', tags: tags ?? [] },
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const result = await captureEntry(entry, services);
+      return { content: [{ type: 'text' as const, text: result }] };
+    }
+  );
 }
