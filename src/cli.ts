@@ -17,12 +17,22 @@ program
   .description('Handle a Claude Code hook event')
   .requiredOption('--event <type>', 'Hook event type (post-commit, pr-event)')
   .action(async (opts) => {
-    // Read stdin for hook input
-    const chunks: Buffer[] = [];
-    for await (const chunk of process.stdin) {
-      chunks.push(chunk);
+    let input: { cwd: string; tool_input?: { command?: string }; tool_response?: unknown };
+    try {
+      const chunks: Buffer[] = [];
+      for await (const chunk of process.stdin) {
+        chunks.push(chunk);
+      }
+      const raw = Buffer.concat(chunks).toString().trim();
+      if (!raw) {
+        console.error('second-brain: no stdin provided, skipping capture-hook');
+        return;
+      }
+      input = JSON.parse(raw);
+    } catch {
+      console.error('second-brain: invalid or missing stdin for capture-hook, skipping');
+      return;
     }
-    const input = JSON.parse(Buffer.concat(chunks).toString());
 
     switch (opts.event) {
       case 'post-commit':
