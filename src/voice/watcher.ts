@@ -32,7 +32,7 @@ export class VoiceWatcher {
 
     console.log(`Watching for voice memos in: ${this.watchDir}`);
 
-    watch(this.watchDir, async (eventType, filename) => {
+    watch(this.watchDir, async (_eventType, filename) => {
       if (!filename || !filename.endsWith('.m4a')) return;
 
       const filePath = join(this.watchDir, filename);
