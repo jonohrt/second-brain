@@ -43,15 +43,17 @@ export function registerSearchTools(server: McpServer, services: Services): void
           .optional()
           .describe('Filter by entry type'),
         limit: z.number().optional().describe('Maximum number of results (default 10)'),
+        tag: z.string().optional().describe('Filter by tag (e.g. "personal", "gotcha", "technique")'),
       },
     },
-    async ({ query, project, repo, type, limit }) => {
+    async ({ query, project, repo, type, limit, tag }) => {
       try {
         const embedding = await services.embeddings.embed(query);
         const results = await services.supabase.searchByEmbedding(embedding, {
           project,
           repo,
           type,
+          tag,
           limit: limit ?? 10,
         });
 
