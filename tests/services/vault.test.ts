@@ -121,4 +121,23 @@ describe('VaultService', () => {
     const entries = vault.listEntries();
     expect(entries.length).toBe(2);
   });
+
+  it('generates correct vault path for tasks', () => {
+    const path = vault.getEntryPath({
+      type: 'task',
+      project: 'tesla',
+      title: 'Improve commit capture',
+      createdAt: new Date('2026-03-04'),
+    });
+    expect(path).toBe(join(tmpDir, 'Dev-Context', 'tesla', 'tasks', '2026-03-04-improve-commit-capture.md'));
+  });
+
+  it('generates vault path for tasks without project', () => {
+    const path = vault.getEntryPath({
+      type: 'task',
+      title: 'General task',
+      createdAt: new Date('2026-03-04'),
+    });
+    expect(path).toBe(join(tmpDir, 'Dev-Context', 'unknown', 'tasks', '2026-03-04-general-task.md'));
+  });
 });

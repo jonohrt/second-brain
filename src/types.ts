@@ -1,4 +1,4 @@
-export type ContextType = 'branch_context' | 'pr_context' | 'decision' | 'learned' | 'session';
+export type ContextType = 'branch_context' | 'pr_context' | 'decision' | 'learned' | 'session' | 'task';
 
 export interface ContextEntry {
   id?: string;

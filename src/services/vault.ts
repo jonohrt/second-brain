@@ -65,6 +65,11 @@ export class VaultService {
         const slug = slugify(opts.title ?? 'untitled');
         return join(base, project, repo, 'sessions', `${date}-${slug}.md`);
       }
+      case 'task': {
+        const date = formatDate(opts.createdAt ?? new Date());
+        const slug = slugify(opts.title ?? 'untitled');
+        return join(base, project, 'tasks', `${date}-${slug}.md`);
+      }
     }
   }
 
