@@ -3,7 +3,30 @@ import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 
+async function reminderExists(title: string): Promise<boolean> {
+  const escapedTitle = title.replace(/"/g, '\\"');
+  const script = `tell application "Reminders"
+  tell list "Reminders"
+    set matches to (every reminder whose name is "${escapedTitle}" and completed is false)
+    return (count of matches) > 0
+  end tell
+end tell`;
+
+  try {
+    const { stdout } = await execFileAsync('osascript', ['-e', script]);
+    return stdout.trim() === 'true';
+  } catch {
+    return false;
+  }
+}
+
 export async function createAppleReminder(title: string, remindAt: Date): Promise<string | null> {
+  // Check for existing reminder with same name to avoid duplicates
+  const exists = await reminderExists(title);
+  if (exists) {
+    return `Reminder "${title}" already exists, skipping.`;
+  }
+
   const dateStr = remindAt.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
