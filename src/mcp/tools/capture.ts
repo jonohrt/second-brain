@@ -60,12 +60,12 @@ export function registerCaptureTools(server: McpServer, services: Services): voi
     'capture_learned',
     {
       description:
-        'Capture something learned — a technique, gotcha, pattern, or insight worth remembering.',
+        'Capture something learned — a technique, gotcha, pattern, or insight worth remembering. Use tags to categorize: technique, gotcha, personal, pattern, insight, idea.',
       inputSchema: {
         title: z.string().describe('Title of what was learned'),
         content: z.string().describe('What was learned, including context and examples'),
         project: z.string().optional().describe('Project name'),
-        tags: z.array(z.string()).optional().describe('Tags for categorization'),
+        tags: z.array(z.string()).optional().describe('Tags for categorization. Suggested categories: technique, gotcha, personal, pattern, insight, idea'),
       },
     },
     async ({ title, content, project, tags }) => {
