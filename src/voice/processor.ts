@@ -12,7 +12,7 @@ function extractTitle(text: string): string {
   return match ? match[0].trim() : text.slice(0, 80).trim();
 }
 
-const REMINDER_PATTERN = /\bremind(?:er|me)\b/i;
+const REMINDER_PATTERN = /\bremind(?:er|\s+me)\b/i;
 
 function parseReminder(transcript: string): { title: string; date: Date } | null {
   if (!REMINDER_PATTERN.test(transcript)) return null;
@@ -27,7 +27,7 @@ function parseReminder(transcript: string): { title: string; date: Date } | null
   // Remove the parsed date text
   title = title.replace(parsed[0].text, '');
   // Remove common reminder prefixes
-  title = title.replace(/^.*?remind(?:er|me)\b\s*/i, '');
+  title = title.replace(/^.*?remind(?:er|\s+me)\b\s*/i, '');
   // Remove filler words like "saying that", "to", "about"
   title = title.replace(/^\s*(?:saying\s+that|saying|to|about)\s+/i, '');
   // Clean up whitespace and punctuation
