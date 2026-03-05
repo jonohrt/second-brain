@@ -44,6 +44,11 @@ export interface Config {
     model: string;
   };
   projects: Record<string, ProjectConfig>;
+  voice?: {
+    watchDir: string;
+    processedLog: string;
+    whisperBinary: string;
+  };
 }
 
 export interface GitContext {

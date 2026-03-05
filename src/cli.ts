@@ -90,4 +90,36 @@ program
     console.log(`Done. Synced ${synced}/${entries.length} entries.`);
   });
 
+program
+  .command('voice-watch')
+  .description('Watch for new Voice Memos and transcribe them into the second brain')
+  .action(async () => {
+    const { getConfig } = await import('./config.js');
+    const { VaultService } = await import('./services/vault.js');
+    const { EmbeddingsService } = await import('./services/embeddings.js');
+    const { SupabaseService } = await import('./services/supabase.js');
+    const { WhisperService } = await import('./services/whisper.js');
+    const { ProcessedTracker } = await import('./services/processed-tracker.js');
+    const { VoiceProcessor } = await import('./voice/processor.js');
+    const { VoiceWatcher } = await import('./voice/watcher.js');
+
+    const config = getConfig();
+    if (!config.voice) {
+      console.error('No voice config found in ~/.second-brain/config.yml');
+      console.error('Add a voice section with watch_dir pointing to your Voice Memos directory.');
+      process.exit(1);
+    }
+
+    const vault = new VaultService(config.vaultPath, config.contextDir);
+    const embeddings = new EmbeddingsService(config.ollama.baseUrl, config.ollama.model);
+    const supabase = new SupabaseService(config.supabase.url, config.supabase.key);
+    const whisper = new WhisperService(config.voice.whisperBinary);
+    const tracker = new ProcessedTracker(config.voice.processedLog);
+    const processor = new VoiceProcessor(whisper, vault, embeddings, supabase, tracker);
+    const watcher = new VoiceWatcher(config.voice.watchDir, processor);
+
+    await watcher.processExisting();
+    watcher.start();
+  });
+
 program.parse();

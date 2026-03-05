@@ -42,12 +42,22 @@ export function loadConfig(configPath: string): Config {
     resolvedProjects[name] = { repos, relatedRepos: proj.related_repos };
   }
 
+  const voice = parsed.voice as Record<string, string> | undefined;
+  const voiceConfig = voice
+    ? {
+        watchDir: expandTilde(voice.watch_dir),
+        processedLog: expandTilde(voice.processed_log ?? '~/.second-brain/processed-voice.json'),
+        whisperBinary: voice.whisper_binary ?? 'whisper-cpp',
+      }
+    : undefined;
+
   return {
     vaultPath: expandTilde(parsed.vault_path as string),
     contextDir: parsed.context_dir as string,
     supabase: { url: supabase.url, key: supabase.key },
     ollama: { baseUrl: ollama.base_url, model: ollama.model },
     projects: resolvedProjects,
+    voice: voiceConfig,
   };
 }
 
