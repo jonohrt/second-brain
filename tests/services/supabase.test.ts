@@ -290,4 +290,52 @@ describe('SupabaseService', () => {
       expect(query.mocks['eq']).toHaveBeenCalledWith('repo', 'my-repo');
     });
   });
+
+  describe('getTasksByStatus', () => {
+    it('queries tasks filtered by status in metadata', async () => {
+      const query = createQueryMock({ data: [], error: null });
+      mockFrom.mockReturnValue(query.chain);
+
+      await service.getTasksByStatus('open');
+
+      expect(mockFrom).toHaveBeenCalledWith('context_entries');
+      expect(query.mocks['select']).toHaveBeenCalledWith('*');
+      expect(query.mocks['eq']).toHaveBeenCalledWith('type', 'task');
+      expect(query.mocks['eq']).toHaveBeenCalledWith('metadata->>status', 'open');
+      expect(query.mocks['order']).toHaveBeenCalledWith('created_at', { ascending: false });
+    });
+
+    it('adds project filter when provided', async () => {
+      const query = createQueryMock({ data: [], error: null });
+      mockFrom.mockReturnValue(query.chain);
+
+      await service.getTasksByStatus('open', { project: 'tesla' });
+
+      expect(query.mocks['eq']).toHaveBeenCalledWith('project', 'tesla');
+    });
+
+    it('applies limit when provided', async () => {
+      const query = createQueryMock({ data: [], error: null });
+      mockFrom.mockReturnValue(query.chain);
+
+      await service.getTasksByStatus('open', { limit: 5 });
+
+      expect(query.mocks['limit']).toHaveBeenCalledWith(5);
+    });
+  });
+
+  describe('findTaskByTitle', () => {
+    it('queries open tasks with title matching substring (case-insensitive)', async () => {
+      const query = createQueryMock({ data: [], error: null });
+      mockFrom.mockReturnValue(query.chain);
+
+      await service.findTaskByTitle('commit capture');
+
+      expect(mockFrom).toHaveBeenCalledWith('context_entries');
+      expect(query.mocks['select']).toHaveBeenCalledWith('*');
+      expect(query.mocks['eq']).toHaveBeenCalledWith('type', 'task');
+      expect(query.mocks['eq']).toHaveBeenCalledWith('metadata->>status', 'open');
+      expect(query.mocks['ilike']).toHaveBeenCalledWith('title', '%commit capture%');
+    });
+  });
 });

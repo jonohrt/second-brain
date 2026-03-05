@@ -102,6 +102,37 @@ export class SupabaseService {
     return (data ?? []).map(this.toContextEntry);
   }
 
+  async getTasksByStatus(
+    status: string,
+    opts?: { project?: string; limit?: number }
+  ): Promise<ContextEntry[]> {
+    let query = this.client
+      .from('context_entries')
+      .select('*')
+      .eq('type', 'task')
+      .eq('metadata->>status', status);
+
+    if (opts?.project) query = query.eq('project', opts.project);
+    query = query.order('created_at', { ascending: false });
+    if (opts?.limit) query = query.limit(opts.limit);
+
+    const { data, error } = await query;
+    if (error) throw new Error(`Supabase query failed: ${error.message}`);
+    return (data ?? []).map(this.toContextEntry);
+  }
+
+  async findTaskByTitle(titleSubstring: string): Promise<ContextEntry[]> {
+    const { data, error } = await this.client
+      .from('context_entries')
+      .select('*')
+      .eq('type', 'task')
+      .eq('metadata->>status', 'open')
+      .ilike('title', `%${titleSubstring}%`);
+
+    if (error) throw new Error(`Supabase query failed: ${error.message}`);
+    return (data ?? []).map(this.toContextEntry);
+  }
+
   private toContextEntry(row: DbContextEntry): ContextEntry {
     return {
       id: row.id,
