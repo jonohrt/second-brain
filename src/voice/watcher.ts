@@ -1,4 +1,4 @@
-import { watch, readdirSync, existsSync } from 'fs';
+import { watch, readdirSync, existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import type { VoiceProcessor } from './processor.js';
 
@@ -6,6 +6,7 @@ export class VoiceWatcher {
   private watchDir: string;
   private processor: VoiceProcessor;
   private processing = new Set<string>();
+  private debounce = new Map<string, NodeJS.Timeout>();
 
   constructor(watchDir: string, processor: VoiceProcessor) {
     this.watchDir = watchDir;
@@ -32,11 +33,19 @@ export class VoiceWatcher {
 
     console.log(`Watching for voice memos in: ${this.watchDir}`);
 
-    watch(this.watchDir, async (_eventType, filename) => {
+    watch(this.watchDir, (_eventType, filename) => {
       if (!filename || !filename.endsWith('.m4a')) return;
 
       const filePath = join(this.watchDir, filename);
-      await this.handleFile(filePath);
+
+      // Debounce: fs.watch fires multiple events per file
+      const existing = this.debounce.get(filePath);
+      if (existing) clearTimeout(existing);
+
+      this.debounce.set(filePath, setTimeout(() => {
+        this.debounce.delete(filePath);
+        this.handleFile(filePath);
+      }, 2000));
     });
   }
 
@@ -48,6 +57,12 @@ export class VoiceWatcher {
       const result = await this.processor.process(filePath);
       if (result) {
         console.log(`Captured: "${result.title}" → ${result.vaultPath}`);
+        try {
+          unlinkSync(filePath);
+          console.log(`Deleted: ${filePath}`);
+        } catch (error) {
+          console.error(`Warning: could not delete ${filePath}:`, error);
+        }
       }
     } catch (error) {
       console.error(`Failed to process ${filePath}:`, error);
