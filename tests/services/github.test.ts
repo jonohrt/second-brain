@@ -55,4 +55,25 @@ describe('GitHubService', () => {
       expect(events).toEqual([]);
     });
   });
+
+  describe('fetchPRTitle', () => {
+    it('fetches PR title from repo API', async () => {
+      mockExecFile.mockResolvedValue({ stdout: JSON.stringify({ title: 'Fix auth flow', state: 'closed', merged: true }), stderr: '' });
+
+      const title = await github.fetchPRTitle('optimumenergyco/core-ui', 42);
+
+      expect(mockExecFile).toHaveBeenCalledWith('gh', [
+        'api', 'repos/optimumenergyco/core-ui/pulls/42',
+        '--hostname', 'github.com',
+      ]);
+      expect(title).toBe('Fix auth flow');
+    });
+
+    it('returns null when API call fails', async () => {
+      mockExecFile.mockRejectedValue(new Error('not found'));
+
+      const title = await github.fetchPRTitle('org/repo', 999);
+      expect(title).toBeNull();
+    });
+  });
 });

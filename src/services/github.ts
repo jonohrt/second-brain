@@ -24,4 +24,17 @@ export class GitHubService {
       return [];
     }
   }
+
+  async fetchPRTitle(repoFullName: string, prNumber: number): Promise<string | null> {
+    try {
+      const { stdout } = await execFileAsync('gh', [
+        'api', `repos/${repoFullName}/pulls/${prNumber}`,
+        '--hostname', 'github.com',
+      ]);
+      const pr = JSON.parse(stdout);
+      return pr.title ?? null;
+    } catch {
+      return null;
+    }
+  }
 }
