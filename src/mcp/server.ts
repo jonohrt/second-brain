@@ -9,6 +9,7 @@ import { registerProjectTools } from './tools/project.js';
 import { registerPrTools } from './tools/pr.js';
 import { registerCaptureTools } from './tools/capture.js';
 import { registerTaskTools } from './tools/tasks.js';
+import { registerStandupTools } from './tools/standup.js';
 
 export interface Services {
   supabase: SupabaseService;
@@ -35,6 +36,7 @@ export function createServer(config: Config): McpServer {
   registerPrTools(server, services);
   registerCaptureTools(server, services);
   registerTaskTools(server, services);
+  registerStandupTools(server);
 
   return server;
 }
