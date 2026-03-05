@@ -1,0 +1,19 @@
+vault_path: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/SecondBrain
+context_dir: Work/Dev-Context
+
+supabase:
+  url: ${SUPABASE_URL}
+  key: ${SUPABASE_ANON_KEY}
+
+ollama:
+  base_url: http://localhost:11434
+  model: nomic-embed-text
+
+projects:
+  tesla:
+    repos:
+      core-ui: ~/Code/tesla/projects/core-ui
+      tesla-site: ~/Code/tesla/projects/tesla-site
+      tesla-ui: ~/Code/tesla/projects/tesla-ui
+    related_repos:
+      - core-ui <-> tesla-site
