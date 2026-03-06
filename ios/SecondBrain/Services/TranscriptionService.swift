@@ -21,7 +21,7 @@ class TranscriptionService {
             throw TranscriptionError.notInitialized
         }
         let results = try await pipe.transcribe(audioPath: audioURL.path)
-        return results?.first?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return results.first?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 }
 

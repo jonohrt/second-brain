@@ -21,7 +21,9 @@ targets:
         INFOPLIST_FILE: SecondBrain/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.jimi.secondbrain
         GENERATE_INFOPLIST_FILE: false
-        CODE_SIGNING_ALLOWED: false
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGNING_ALLOWED: "NO"
     dependencies:
       - package: WhisperKit
 
