@@ -2,3 +2,6 @@ node_modules/
 dist/
 *.env
 config.yml
+
+# Generated Xcode project (regenerate with: cd ios && xcodegen generate)
+ios/SecondBrain.xcodeproj/
