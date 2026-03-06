@@ -52,6 +52,14 @@ export function loadConfig(configPath: string): Config {
       }
     : undefined;
 
+  const server = parsed.server as Record<string, unknown> | undefined;
+  const serverConfig = server
+    ? {
+        port: (server.port as number) ?? 3000,
+        apiToken: server.api_token as string,
+      }
+    : undefined;
+
   return {
     vaultPath: expandTilde(parsed.vault_path as string),
     contextDir: parsed.context_dir as string,
@@ -59,6 +67,7 @@ export function loadConfig(configPath: string): Config {
     ollama: { baseUrl: ollama.base_url, model: ollama.model },
     projects: resolvedProjects,
     voice: voiceConfig,
+    server: serverConfig,
   };
 }
 

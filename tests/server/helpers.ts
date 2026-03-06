@@ -14,5 +14,11 @@ export function buildTestApp() {
     },
   };
 
-  return createApp(config);
+  return createApp(config, {
+    protectedRoutes: async (scoped) => {
+      scoped.post('/test-protected', async () => {
+        return { ok: true };
+      });
+    },
+  });
 }

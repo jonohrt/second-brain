@@ -50,6 +50,10 @@ export interface Config {
     whisperBinary: string;
     whisperModel: string;
   };
+  server?: {
+    port: number;
+    apiToken: string;
+  };
 }
 
 export interface GitContext {

@@ -15,17 +15,20 @@
     "dev": "tsx src/index.ts",
     "cli": "tsx src/cli.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "server": "tsx src/server/index.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@fastify/bearer-auth": "^10.1.2",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@supabase/supabase-js": "^2.98.0",
     "chrono-node": "^2.9.0",
     "commander": "^14.0.3",
+    "fastify": "^5.8.1",
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.1",
     "simple-git": "^3.32.3",
