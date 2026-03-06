@@ -1,0 +1,38 @@
+name: SecondBrain
+options:
+  bundleIdPrefix: com.jimi
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+
+packages:
+  WhisperKit:
+    url: https://github.com/argmaxinc/WhisperKit.git
+    from: "0.9.0"
+
+targets:
+  SecondBrain:
+    type: application
+    platform: iOS
+    sources:
+      - SecondBrain
+    settings:
+      base:
+        INFOPLIST_FILE: SecondBrain/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.jimi.secondbrain
+        GENERATE_INFOPLIST_FILE: false
+    dependencies:
+      - package: WhisperKit
+
+  SecondBrainTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - SecondBrainTests
+    dependencies:
+      - target: SecondBrain
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/SecondBrain.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SecondBrain"
+        BUNDLE_LOADER: "$(TEST_HOST)"
