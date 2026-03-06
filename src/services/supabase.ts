@@ -143,6 +143,29 @@ export class SupabaseService {
     return (data ?? []).map(this.toContextEntry);
   }
 
+  async searchWithScores(
+    embedding: number[],
+    opts?: { limit?: number; threshold?: number },
+  ): Promise<Array<{ entry: ContextEntry; similarity: number }>> {
+    const { data, error } = await this.client.rpc('match_context_entries', {
+      query_embedding: embedding,
+      match_count: opts?.limit ?? 5,
+      filter_project: null,
+      filter_repo: null,
+      filter_type: null,
+    });
+
+    if (error) throw new Error(`Supabase search failed: ${error.message}`);
+
+    const threshold = opts?.threshold ?? 0.65;
+    return (data ?? [])
+      .filter((row: DbContextEntry & { similarity: number }) => row.similarity >= threshold)
+      .map((row: DbContextEntry & { similarity: number }) => ({
+        entry: this.toContextEntry(row),
+        similarity: row.similarity,
+      }));
+  }
+
   private toContextEntry(row: DbContextEntry): ContextEntry {
     return {
       id: row.id,

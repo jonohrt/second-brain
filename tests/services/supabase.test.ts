@@ -338,4 +338,192 @@ describe('SupabaseService', () => {
       expect(query.mocks['ilike']).toHaveBeenCalledWith('title', '%commit capture%');
     });
   });
+
+  describe('searchWithScores', () => {
+    it('calls rpc with correct params and returns entries with similarity scores', async () => {
+      mockRpc.mockResolvedValue({
+        data: [
+          {
+            id: 'r1',
+            type: 'learned',
+            project: null,
+            repo: 'my-repo',
+            branch: null,
+            pr_number: null,
+            title: 'Learned Thing',
+            content: 'details',
+            metadata: { a: 1 },
+            vault_path: 'notes/learned.md',
+            created_at: '2025-01-01T00:00:00.000Z',
+            updated_at: '2025-01-02T00:00:00.000Z',
+            similarity: 0.85,
+          },
+        ],
+        error: null,
+      });
+
+      const results = await service.searchWithScores([0.1, 0.2, 0.3]);
+
+      expect(mockRpc).toHaveBeenCalledWith('match_context_entries', {
+        query_embedding: [0.1, 0.2, 0.3],
+        match_count: 5,
+        filter_project: null,
+        filter_repo: null,
+        filter_type: null,
+      });
+
+      expect(results).toHaveLength(1);
+      expect(results[0].similarity).toBe(0.85);
+      expect(results[0].entry.title).toBe('Learned Thing');
+      expect(results[0].entry.vaultPath).toBe('notes/learned.md');
+    });
+
+    it('filters results below default threshold of 0.65', async () => {
+      mockRpc.mockResolvedValue({
+        data: [
+          {
+            id: 'low',
+            type: 'learned',
+            project: null,
+            repo: null,
+            branch: null,
+            pr_number: null,
+            title: 'Low Score',
+            content: 'low',
+            metadata: {},
+            vault_path: null,
+            created_at: '2025-01-01T00:00:00.000Z',
+            updated_at: '2025-01-01T00:00:00.000Z',
+            similarity: 0.5,
+          },
+          {
+            id: 'med',
+            type: 'learned',
+            project: null,
+            repo: null,
+            branch: null,
+            pr_number: null,
+            title: 'Med Score',
+            content: 'med',
+            metadata: {},
+            vault_path: null,
+            created_at: '2025-01-01T00:00:00.000Z',
+            updated_at: '2025-01-01T00:00:00.000Z',
+            similarity: 0.7,
+          },
+          {
+            id: 'high',
+            type: 'learned',
+            project: null,
+            repo: null,
+            branch: null,
+            pr_number: null,
+            title: 'High Score',
+            content: 'high',
+            metadata: {},
+            vault_path: null,
+            created_at: '2025-01-01T00:00:00.000Z',
+            updated_at: '2025-01-01T00:00:00.000Z',
+            similarity: 0.9,
+          },
+        ],
+        error: null,
+      });
+
+      const results = await service.searchWithScores([1, 2, 3]);
+
+      // Only 0.7 and 0.9 should pass the 0.65 threshold
+      expect(results).toHaveLength(2);
+      expect(results[0].entry.title).toBe('Med Score');
+      expect(results[1].entry.title).toBe('High Score');
+    });
+
+    it('respects custom threshold', async () => {
+      mockRpc.mockResolvedValue({
+        data: [
+          {
+            id: 'med',
+            type: 'learned',
+            project: null,
+            repo: null,
+            branch: null,
+            pr_number: null,
+            title: 'Med Score',
+            content: 'med',
+            metadata: {},
+            vault_path: null,
+            created_at: '2025-01-01T00:00:00.000Z',
+            updated_at: '2025-01-01T00:00:00.000Z',
+            similarity: 0.7,
+          },
+          {
+            id: 'high',
+            type: 'learned',
+            project: null,
+            repo: null,
+            branch: null,
+            pr_number: null,
+            title: 'High Score',
+            content: 'high',
+            metadata: {},
+            vault_path: null,
+            created_at: '2025-01-01T00:00:00.000Z',
+            updated_at: '2025-01-01T00:00:00.000Z',
+            similarity: 0.9,
+          },
+        ],
+        error: null,
+      });
+
+      const results = await service.searchWithScores([1, 2], { threshold: 0.8 });
+
+      // Only 0.9 should pass the 0.8 threshold
+      expect(results).toHaveLength(1);
+      expect(results[0].entry.title).toBe('High Score');
+    });
+
+    it('throws on RPC error', async () => {
+      mockRpc.mockResolvedValue({
+        data: null,
+        error: { message: 'rpc failed' },
+      });
+
+      await expect(service.searchWithScores([1])).rejects.toThrow(
+        'Supabase search failed: rpc failed',
+      );
+    });
+
+    it('returns empty array when no results', async () => {
+      mockRpc.mockResolvedValue({ data: [], error: null });
+
+      const results = await service.searchWithScores([1, 2]);
+      expect(results).toEqual([]);
+    });
+
+    it('returns empty array when no results pass threshold', async () => {
+      mockRpc.mockResolvedValue({
+        data: [
+          {
+            id: 'low',
+            type: 'learned',
+            project: null,
+            repo: null,
+            branch: null,
+            pr_number: null,
+            title: 'Low',
+            content: 'low',
+            metadata: {},
+            vault_path: null,
+            created_at: '2025-01-01T00:00:00.000Z',
+            updated_at: '2025-01-01T00:00:00.000Z',
+            similarity: 0.3,
+          },
+        ],
+        error: null,
+      });
+
+      const results = await service.searchWithScores([1]);
+      expect(results).toEqual([]);
+    });
+  });
 });
