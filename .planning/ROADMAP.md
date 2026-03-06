@@ -29,11 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Sending a request without a valid bearer token returns 401 on all protected endpoints
   4. SearXNG returns JSON search results when queried via its local API
   5. The server is reachable from an iPhone on the same Tailscale network
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Fastify server with bearer auth and /health endpoint
+- [ ] 01-02-PLAN.md — Extract captureEntry and wire /capture endpoint
+- [ ] 01-03-PLAN.md — Deploy SearXNG Docker container with JSON API
 
 ### Phase 2: Ask Pipeline
 **Goal**: Users can send a text question and receive an LLM-generated answer grounded in their vault notes and/or web search results, with automatic fallback when the cloud model is unavailable
@@ -86,7 +87,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Server Foundation | 0/2 | Not started | - |
+| 1. Server Foundation | 0/3 | Not started | - |
 | 2. Ask Pipeline | 0/2 | Not started | - |
 | 3. iOS App | 0/2 | Not started | - |
 | 4. Enhancements | 0/1 | Not started | - |
