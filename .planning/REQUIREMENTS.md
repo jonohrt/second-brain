@@ -24,11 +24,11 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Ask Pipeline
 
 - [ ] **ASK-01**: /ask endpoint accepts text and returns text response with sources
-- [ ] **ASK-02**: RAG retrieves relevant context from Supabase vector search with relevance threshold
-- [ ] **ASK-03**: LLM routing classifies question as brain/web/both via two-call approach
-- [ ] **ASK-04**: SearXNG web search returns results for general knowledge questions
+- [x] **ASK-02**: RAG retrieves relevant context from Supabase vector search with relevance threshold
+- [x] **ASK-03**: LLM routing classifies question as brain/web/both via two-call approach
+- [x] **ASK-04**: SearXNG web search returns results for general knowledge questions
 - [ ] **ASK-05**: LLM generates answer grounded in retrieved context (qwen3.5:cloud via Ollama)
-- [ ] **ASK-06**: Falls back to local 7B model when cloud model is unavailable
+- [x] **ASK-06**: Falls back to local 7B model when cloud model is unavailable
 
 ### Capture Pipeline
 
@@ -88,11 +88,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RESP-03 | Phase 4 | Pending |
 | RESP-04 | Phase 4 | Pending |
 | ASK-01 | Phase 2 | Pending |
-| ASK-02 | Phase 2 | Pending |
-| ASK-03 | Phase 2 | Pending |
-| ASK-04 | Phase 2 | Pending |
+| ASK-02 | Phase 2 | Complete |
+| ASK-03 | Phase 2 | Complete |
+| ASK-04 | Phase 2 | Complete |
 | ASK-05 | Phase 2 | Pending |
-| ASK-06 | Phase 2 | Pending |
+| ASK-06 | Phase 2 | Complete |
 | CAP-01 | Phase 1 | Complete |
 | CAP-02 | Phase 1 | Complete |
 | INFRA-01 | Phase 1 | Complete |
