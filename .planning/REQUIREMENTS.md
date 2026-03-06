@@ -32,8 +32,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Capture Pipeline
 
-- [ ] **CAP-01**: /capture endpoint accepts text and runs existing voice processor pipeline
-- [ ] **CAP-02**: Returns confirmation with title and vault path
+- [x] **CAP-01**: /capture endpoint accepts text and runs existing voice processor pipeline
+- [x] **CAP-02**: Returns confirmation with title and vault path
 
 ### Infrastructure
 
@@ -93,8 +93,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ASK-04 | Phase 2 | Pending |
 | ASK-05 | Phase 2 | Pending |
 | ASK-06 | Phase 2 | Pending |
-| CAP-01 | Phase 1 | Pending |
-| CAP-02 | Phase 1 | Pending |
+| CAP-01 | Phase 1 | Complete |
+| CAP-02 | Phase 1 | Complete |
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 1 | Complete |
 | INFRA-03 | Phase 1 | Complete |
