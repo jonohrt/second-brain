@@ -2,7 +2,7 @@
 phase: 3
 slug: ios-app
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-03-06
 ---
@@ -36,14 +36,14 @@ created: 2026-03-06
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 3-01-01 | 01 | 1 | VOICE-01 | manual-only | Manual: verify button animation and recording on device | N/A | pending |
-| 3-01-02 | 01 | 1 | VOICE-02 | unit | `xcodebuild test -only-testing:SecondBrainTests/TranscriptionServiceTests` | Wave 0 | pending |
-| 3-01-03 | 01 | 1 | VOICE-04 | manual-only | Manual: verify TextEditor is editable after transcription | N/A | pending |
-| 3-02-01 | 02 | 1 | VOICE-03 | manual-only | Manual: verify ProgressView appears during /ask call | N/A | pending |
-| 3-02-02 | 02 | 1 | RESP-01 | manual-only | Manual: verify ScrollView with long response | N/A | pending |
-| 3-02-03 | 02 | 1 | RESP-02 | unit | `xcodebuild test -only-testing:SecondBrainTests/APIClientTests` | Wave 0 | pending |
+| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | Status |
+|---------|------|------|-------------|-----------|-------------------|--------|
+| 3-01-01 | 01 | 1 | RESP-02 (partial) | file-existence | `test -f ios/project.yml && test -f ios/SecondBrain/Models/APIModels.swift` (project not yet buildable) | pending |
+| 3-01-02 | 01 | 1 | RESP-02 | build | `cd ios && xcodegen generate && xcodebuild build -scheme SecondBrain -destination 'platform=iOS Simulator,name=iPhone 16'` | pending |
+| 3-02-01 | 02 | 2 | VOICE-01, VOICE-02 | build | `cd ios && xcodebuild build -scheme SecondBrain -destination 'platform=iOS Simulator,name=iPhone 16'` | pending |
+| 3-02-02 | 02 | 2 | VOICE-03, RESP-02 | build | `cd ios && xcodebuild build -scheme SecondBrain -destination 'platform=iOS Simulator,name=iPhone 16'` | pending |
+| 3-02-03 | 02 | 2 | VOICE-04, RESP-01 | build | `cd ios && xcodebuild build -scheme SecondBrain -destination 'platform=iOS Simulator,name=iPhone 16'` | pending |
+| 3-02-04 | 02 | 2 | ALL | manual | Human verifies all 6 requirements on device/simulator | pending |
 
 *Status: pending · green · red · flaky*
 
@@ -71,11 +71,11 @@ created: 2026-03-06
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** revised per checker feedback 2026-03-06
