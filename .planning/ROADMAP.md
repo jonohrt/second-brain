@@ -87,7 +87,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Server Foundation | 0/3 | Not started | - |
+| 1. Server Foundation | 2/3 | In Progress|  |
 | 2. Ask Pipeline | 0/2 | Not started | - |
 | 3. iOS App | 0/2 | Not started | - |
 | 4. Enhancements | 0/1 | Not started | - |

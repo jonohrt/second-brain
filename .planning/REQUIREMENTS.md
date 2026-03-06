@@ -39,7 +39,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **INFRA-01**: Fastify HTTP server with /health endpoint
 - [x] **INFRA-02**: Bearer token authentication on all API endpoints
-- [ ] **INFRA-03**: SearXNG running via Docker with JSON API enabled
+- [x] **INFRA-03**: SearXNG running via Docker with JSON API enabled
 - [x] **INFRA-04**: API server accessible remotely via Tailscale (already installed)
 - [x] **INFRA-05**: Sequential Ollama model loading to fit 8GB RAM
 
@@ -97,7 +97,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CAP-02 | Phase 1 | Pending |
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 1 | Complete |
-| INFRA-03 | Phase 1 | Pending |
+| INFRA-03 | Phase 1 | Complete |
 | INFRA-04 | Phase 1 | Complete |
 | INFRA-05 | Phase 1 | Complete |
 
