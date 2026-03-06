@@ -8,7 +8,11 @@ import { EmbeddingsService } from '../services/embeddings.js';
 import { VaultService } from '../services/vault.js';
 import { healthRoutes } from './routes/health.js';
 import { captureRoutes } from './routes/capture.js';
+import { askRoutes } from './routes/ask.js';
 import { authPlugin } from './plugins/auth.js';
+import { OllamaChatService } from '../services/ollama-chat.js';
+import { SearxngService } from '../services/searxng.js';
+import { AskPipeline } from '../services/ask-pipeline.js';
 
 // NOTE: The Ollama process must be started with OLLAMA_MAX_LOADED_MODELS=1
 // to avoid memory pressure on the 8GB Mac Mini. Ollama handles this natively
@@ -19,6 +23,8 @@ export interface CreateAppOptions {
   protectedRoutes?: (scoped: FastifyInstance) => Promise<void> | void;
   /** Pre-built services (for testing with mocks) */
   services?: Services;
+  /** Pre-built AskPipeline (for testing with mocks) */
+  askPipeline?: AskPipeline;
 }
 
 function buildServices(config: Config): Services {
@@ -28,9 +34,20 @@ function buildServices(config: Config): Services {
   return { supabase, embeddings, vault, config };
 }
 
+function buildAskPipeline(config: Config, services: Services): AskPipeline {
+  const ollamaChat = new OllamaChatService(
+    config.ollama.baseUrl,
+    'qwen3.5:cloud',
+    'qwen2.5:7b',
+  );
+  const searxng = new SearxngService('http://localhost:8888');
+  return new AskPipeline(ollamaChat, searxng, services.embeddings, services.supabase);
+}
+
 export function createApp(config: Config, opts?: CreateAppOptions): FastifyInstance {
   const app = Fastify({ logger: false });
   const services = opts?.services ?? buildServices(config);
+  const askPipeline = opts?.askPipeline ?? buildAskPipeline(config, services);
 
   // Public routes -- no auth required
   app.register(healthRoutes);
@@ -42,6 +59,9 @@ export function createApp(config: Config, opts?: CreateAppOptions): FastifyInsta
 
       // Capture endpoint
       await scoped.register(captureRoutes, { services });
+
+      // Ask endpoint
+      await scoped.register(askRoutes, { askPipeline });
 
       // Register any protected routes passed via options
       if (opts?.protectedRoutes) {
