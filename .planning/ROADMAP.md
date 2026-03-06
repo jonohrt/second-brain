@@ -62,11 +62,11 @@ Plans:
   3. User can edit the transcribed text before sending it to the server
   4. After sending a question, a loading indicator is visible until the response arrives
   5. The LLM response displays as scrollable text, and failed requests show an error with a retry button
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md — Xcode project scaffold, API models, APIClient with bearer auth and error handling tests
+- [ ] 03-02-PLAN.md — AudioRecorder, WhisperKit transcription, AppViewModel, and SwiftUI views with human verification
 
 ### Phase 4: Enhancements
 **Goal**: Users can listen to responses hands-free and see which vault notes informed the answer
