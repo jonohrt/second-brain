@@ -46,11 +46,11 @@ Plans:
   3. The /ask response includes a list of source vault note paths when brain search was used
   4. When qwen3.5:cloud is unavailable, the endpoint still returns an answer using the local fallback model
   5. End-to-end /ask response completes within 15 seconds on the local network
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — OllamaChatService, SearxngService, and SupabaseService.searchWithScores leaf services
+- [ ] 02-02-PLAN.md — AskPipeline orchestrator and /ask route endpoint
 
 ### Phase 3: iOS App
 **Goal**: Users can hold a button to speak a question or thought, see it transcribed on-device, optionally edit it, send it to the Mac Mini, and read the response -- all from their iPhone
