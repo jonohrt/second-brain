@@ -79,13 +79,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated by roadmapper) | | |
+| VOICE-01 | Phase 3 | Pending |
+| VOICE-02 | Phase 3 | Pending |
+| VOICE-03 | Phase 3 | Pending |
+| VOICE-04 | Phase 3 | Pending |
+| RESP-01 | Phase 3 | Pending |
+| RESP-02 | Phase 3 | Pending |
+| RESP-03 | Phase 4 | Pending |
+| RESP-04 | Phase 4 | Pending |
+| ASK-01 | Phase 2 | Pending |
+| ASK-02 | Phase 2 | Pending |
+| ASK-03 | Phase 2 | Pending |
+| ASK-04 | Phase 2 | Pending |
+| ASK-05 | Phase 2 | Pending |
+| ASK-06 | Phase 2 | Pending |
+| CAP-01 | Phase 1 | Pending |
+| CAP-02 | Phase 1 | Pending |
+| INFRA-01 | Phase 1 | Pending |
+| INFRA-02 | Phase 1 | Pending |
+| INFRA-03 | Phase 1 | Pending |
+| INFRA-04 | Phase 1 | Pending |
+| INFRA-05 | Phase 1 | Pending |
 
 **Coverage:**
-- v1 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17 ⚠️
+- v1 requirements: 21 total
+- Mapped to phases: 21
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-06*
-*Last updated: 2026-03-06 after initial definition*
+*Last updated: 2026-03-06 after roadmap creation*
