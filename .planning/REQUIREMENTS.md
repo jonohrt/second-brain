@@ -17,7 +17,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Response Display
 
 - [ ] **RESP-01**: User sees LLM answer as scrollable text
-- [ ] **RESP-02**: User sees error messages with a retry button when requests fail
+- [x] **RESP-02**: User sees error messages with a retry button when requests fail
 - [ ] **RESP-03**: User can toggle TTS to have responses read aloud (AVSpeechSynthesizer, sentence-split)
 - [ ] **RESP-04**: User sees which vault notes informed the answer (source attribution)
 
@@ -84,7 +84,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VOICE-03 | Phase 3 | Pending |
 | VOICE-04 | Phase 3 | Pending |
 | RESP-01 | Phase 3 | Pending |
-| RESP-02 | Phase 3 | Pending |
+| RESP-02 | Phase 3 | Complete |
 | RESP-03 | Phase 4 | Pending |
 | RESP-04 | Phase 4 | Pending |
 | ASK-01 | Phase 2 | Complete |
