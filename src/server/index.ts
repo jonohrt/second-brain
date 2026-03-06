@@ -1,8 +1,13 @@
 import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import type { Config } from '../types.js';
+import type { Services } from '../mcp/server.js';
 import { getConfig } from '../config.js';
+import { SupabaseService } from '../services/supabase.js';
+import { EmbeddingsService } from '../services/embeddings.js';
+import { VaultService } from '../services/vault.js';
 import { healthRoutes } from './routes/health.js';
+import { captureRoutes } from './routes/capture.js';
 import { authPlugin } from './plugins/auth.js';
 
 // NOTE: The Ollama process must be started with OLLAMA_MAX_LOADED_MODELS=1
@@ -12,10 +17,20 @@ import { authPlugin } from './plugins/auth.js';
 export interface CreateAppOptions {
   /** Callback to register routes inside the auth-protected scope */
   protectedRoutes?: (scoped: FastifyInstance) => Promise<void> | void;
+  /** Pre-built services (for testing with mocks) */
+  services?: Services;
+}
+
+function buildServices(config: Config): Services {
+  const supabase = new SupabaseService(config.supabase.url, config.supabase.key);
+  const embeddings = new EmbeddingsService(config.ollama.baseUrl, config.ollama.model);
+  const vault = new VaultService(config.vaultPath, config.contextDir);
+  return { supabase, embeddings, vault, config };
 }
 
 export function createApp(config: Config, opts?: CreateAppOptions): FastifyInstance {
   const app = Fastify({ logger: false });
+  const services = opts?.services ?? buildServices(config);
 
   // Public routes -- no auth required
   app.register(healthRoutes);
@@ -24,6 +39,9 @@ export function createApp(config: Config, opts?: CreateAppOptions): FastifyInsta
   if (config.server?.apiToken) {
     app.register(async function protectedScope(scoped) {
       await scoped.register(authPlugin, { apiToken: config.server!.apiToken });
+
+      // Capture endpoint
+      await scoped.register(captureRoutes, { services });
 
       // Register any protected routes passed via options
       if (opts?.protectedRoutes) {
