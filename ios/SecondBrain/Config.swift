@@ -8,5 +8,5 @@ struct AppConfig {
     static let apiToken = "CHANGE_ME"
 
     /// Request timeout in seconds (keeps UI responsive over Tailscale)
-    static let requestTimeout: TimeInterval = 15
+    static let requestTimeout: TimeInterval = 60
 }
