@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var viewModel = AppViewModel()
     @FocusState private var isEditorFocused: Bool
+    @Namespace private var topID
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,17 +29,25 @@ struct ContentView: View {
             }
 
             // Response area — takes all available space
-            ScrollView {
-                if !viewModel.answer.isEmpty {
-                    Text(viewModel.answer)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                } else if !viewModel.isLoading {
-                    Text("Ask a question or record a voice note")
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(.top, 80)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    Color.clear.frame(height: 0).id("top")
+                    if !viewModel.answer.isEmpty {
+                        Text(viewModel.answer)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                    } else if !viewModel.isLoading {
+                        Text("Ask a question or record a voice note")
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(.top, 80)
+                    }
+                }
+                .onChange(of: viewModel.answer) {
+                    withAnimation {
+                        proxy.scrollTo("top", anchor: .top)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
