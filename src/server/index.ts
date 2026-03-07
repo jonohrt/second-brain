@@ -61,7 +61,7 @@ export function createApp(config: Config, opts?: CreateAppOptions): FastifyInsta
       await scoped.register(captureRoutes, { services });
 
       // Ask endpoint
-      await scoped.register(askRoutes, { askPipeline });
+      await scoped.register(askRoutes, { askPipeline, services });
 
       // Register any protected routes passed via options
       if (opts?.protectedRoutes) {
