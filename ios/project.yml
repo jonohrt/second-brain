@@ -21,7 +21,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jimi.secondbrain
-        GENERATE_INFOPLIST_FILE: true
+        GENERATE_INFOPLIST_FILE: false
+        INFOPLIST_FILE: Generated/Info.plist
         CODE_SIGN_STYLE: Automatic
     info:
       path: Generated/Info.plist
