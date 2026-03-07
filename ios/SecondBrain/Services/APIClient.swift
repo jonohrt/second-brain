@@ -9,7 +9,10 @@ struct APIClient {
     init() {
         self.baseURL = AppConfig.serverURL
         self.apiToken = AppConfig.apiToken
-        self.urlSession = .shared
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = AppConfig.requestTimeout
+        config.timeoutIntervalForResource = AppConfig.requestTimeout
+        self.urlSession = URLSession(configuration: config)
     }
 
     /// Explicit init for testing with custom URL, token, and session
