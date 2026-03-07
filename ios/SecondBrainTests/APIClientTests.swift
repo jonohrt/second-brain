@@ -60,7 +60,7 @@ final class APIClientTests: XCTestCase {
 
     func testAskWithValidResponseDecodesCorrectly() async throws {
         let json = """
-        {"answer":"42","sources":["note.md"],"route":"brain","model":"qwen"}
+        {"answer":"42","sources":[{"type":"vault","path":"notes/note.md","title":"My Note","similarity":0.82}],"route":"brain","model":"qwen"}
         """.data(using: .utf8)!
 
         MockURLProtocol.requestHandler = { request in
@@ -78,9 +78,32 @@ final class APIClientTests: XCTestCase {
 
         let result = try await client.ask(text: "What is the meaning of life?")
         XCTAssertEqual(result.answer, "42")
-        XCTAssertEqual(result.sources, ["note.md"])
+        XCTAssertEqual(result.sources?.first?.type, "vault")
+        XCTAssertEqual(result.sources?.first?.path, "notes/note.md")
+        XCTAssertEqual(result.sources?.first?.title, "My Note")
         XCTAssertEqual(result.route, "brain")
         XCTAssertEqual(result.model, "qwen")
+    }
+
+    func testAskWithWebSourceDecodesCorrectly() async throws {
+        let json = """
+        {"answer":"Paris","sources":[{"type":"web","url":"https://example.com","title":"Example"}],"route":"web","model":"qwen"}
+        """.data(using: .utf8)!
+
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200,
+                httpVersion: nil, headerFields: nil
+            )!
+            return (response, json)
+        }
+
+        let result = try await client.ask(text: "What is the capital of France?")
+        XCTAssertEqual(result.answer, "Paris")
+        XCTAssertEqual(result.sources?.first?.type, "web")
+        XCTAssertEqual(result.sources?.first?.url, "https://example.com")
+        XCTAssertEqual(result.sources?.first?.title, "Example")
+        XCTAssertNil(result.sources?.first?.path)
     }
 
     func testAskWith401ThrowsRequestFailed() async {

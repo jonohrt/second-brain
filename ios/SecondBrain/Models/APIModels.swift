@@ -15,10 +15,13 @@ struct CaptureRequest: Encodable {
 
 // MARK: - Response Types
 
-struct AskSource: Decodable {
+struct AskSource: Decodable, Identifiable {
     let type: String?
     let url: String?
     let title: String?
+    let path: String?
+
+    var id: String { path ?? url ?? title ?? UUID().uuidString }
 }
 
 struct AskResponse: Decodable {
