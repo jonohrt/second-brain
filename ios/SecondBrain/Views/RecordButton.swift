@@ -9,12 +9,12 @@ struct RecordButton: View {
     var body: some View {
         Circle()
             .fill(isRecording ? Color.red : Color.blue)
-            .frame(width: 80, height: 80)
-            .scaleEffect(isRecording ? 1.3 : 1.0)
+            .frame(width: 48, height: 48)
+            .scaleEffect(isRecording ? 1.2 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: isRecording)
             .overlay(
                 Image(systemName: "mic.fill")
-                    .font(.system(size: isRecording ? 32 : 24))
+                    .font(.system(size: isRecording ? 22 : 18))
                     .foregroundColor(.white)
                     .animation(.easeInOut(duration: 0.15), value: isRecording)
             )
