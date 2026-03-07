@@ -15,9 +15,15 @@ struct CaptureRequest: Encodable {
 
 // MARK: - Response Types
 
+struct AskSource: Decodable {
+    let type: String?
+    let url: String?
+    let title: String?
+}
+
 struct AskResponse: Decodable {
     let answer: String
-    let sources: [String]?
+    let sources: [AskSource]?
     let route: String?
     let model: String?
 }
