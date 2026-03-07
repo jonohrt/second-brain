@@ -4,5 +4,12 @@
 <dict>
     <key>NSMicrophoneUsageDescription</key>
     <string>SecondBrain needs microphone access to record your voice for transcription.</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
 </dict>
 </plist>
