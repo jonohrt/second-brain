@@ -37,15 +37,15 @@ function buildServices(config: Config): Services {
 function buildAskPipeline(config: Config, services: Services): AskPipeline {
   const ollamaChat = new OllamaChatService(
     config.ollama.baseUrl,
+    'gemma3:12b-cloud',
     'glm-5:cloud',
-    'qwen3.5:cloud',
   );
   const searxng = new SearxngService('http://localhost:8888');
   return new AskPipeline(ollamaChat, searxng, services.embeddings, services.supabase);
 }
 
 export function createApp(config: Config, opts?: CreateAppOptions): FastifyInstance {
-  const app = Fastify({ logger: false });
+  const app = Fastify({ logger: true });
   const services = opts?.services ?? buildServices(config);
   const askPipeline = opts?.askPipeline ?? buildAskPipeline(config, services);
 
