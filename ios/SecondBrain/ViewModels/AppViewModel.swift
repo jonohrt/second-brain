@@ -12,6 +12,18 @@ class AppViewModel {
     /// LLM response text
     var answer: String = ""
 
+    /// Whether TTS readback is enabled
+    var isTTSEnabled: Bool = false
+
+    /// Sources from the last API response
+    var currentSources: [AskSource] = []
+
+    /// Vault sources filtered from currentSources
+    var vaultSources: [AskSource] { currentSources.filter { $0.type == "vault" } }
+
+    /// Whether TTS is actively speaking
+    var isSpeaking: Bool { speechService.isSpeaking }
+
     /// Whether the mic is actively recording
     var isRecording: Bool = false
 
@@ -35,6 +47,7 @@ class AppViewModel {
     private let apiClient: APIClient
     private let recorder: AudioRecorder
     private let transcriber: TranscriptionService
+    private let speechService = SpeechService()
 
     // MARK: - Init
 
@@ -67,6 +80,7 @@ class AppViewModel {
 
     /// Starts recording from the microphone. Requires WhisperKit to be ready.
     func startRecording() {
+        speechService.stop()
         guard isWhisperReady, !isRecording else { return }
         answer = ""
         error = nil
@@ -102,9 +116,14 @@ class AppViewModel {
         guard !trimmed.isEmpty else { return }
         isLoading = true
         error = nil
+        speechService.stop()
         do {
             let response = try await apiClient.ask(text: trimmed)
             answer = response.answer
+            currentSources = response.sources ?? []
+            if isTTSEnabled {
+                speechService.speak(response.answer)
+            }
         } catch {
             self.error = error.localizedDescription
         }
@@ -114,5 +133,17 @@ class AppViewModel {
     /// Retries the last question.
     func retry() async {
         await sendQuestion()
+    }
+
+    // MARK: - TTS
+
+    /// Toggles text-to-speech readback on/off.
+    func toggleTTS() {
+        isTTSEnabled.toggle()
+        if !isTTSEnabled && speechService.isSpeaking {
+            speechService.stop()
+        } else if isTTSEnabled && !answer.isEmpty {
+            speechService.speak(answer)
+        }
     }
 }

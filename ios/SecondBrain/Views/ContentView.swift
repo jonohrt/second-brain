@@ -12,6 +12,13 @@ struct ContentView: View {
                 Text("Second Brain")
                     .font(.title2.bold())
                 Spacer()
+                Button {
+                    viewModel.toggleTTS()
+                } label: {
+                    Image(systemName: viewModel.isTTSEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .font(.title3)
+                        .foregroundColor(viewModel.isTTSEnabled ? .blue : .secondary)
+                }
             }
             .padding(.horizontal)
             .padding(.top, 8)
@@ -37,6 +44,27 @@ struct ContentView: View {
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
+
+                        // Vault source attribution
+                        if !viewModel.vaultSources.isEmpty {
+                            Divider()
+                                .padding(.horizontal)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Sources")
+                                    .font(.caption.bold())
+                                    .foregroundColor(.secondary)
+                                ForEach(viewModel.vaultSources) { source in
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "doc.text")
+                                        Text(source.title ?? source.path ?? "Unknown")
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                }
+                            }
+                            .padding(.horizontal)
+                            .padding(.bottom, 8)
+                        }
                     } else if !viewModel.isLoading {
                         Text("Ask a question or record a voice note")
                             .foregroundColor(.secondary)
