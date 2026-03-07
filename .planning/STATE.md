@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in-progress
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-03-06T21:56:42Z"
-last_activity: 2026-03-06 -- Plan 03-01 executed (iOS project scaffold + APIClient with tests)
+status: completed
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-07T07:21:44.101Z"
+last_activity: 2026-03-06 -- Plan 03-02 executed (voice input, transcription, SwiftUI interface, device verified)
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Ask a question by voice from anywhere and get an answer grounded in your personal knowledge base and the web -- hands-free, free of cost.
-**Current focus:** Phase 3: iOS App
+**Current focus:** Phase 3 complete, ready for Phase 4: Enhancements
 
 ## Current Position
 
-Phase: 3 of 4 (iOS App)
-Plan: 1 of 2 in current phase (1 complete)
-Status: Plan 03-01 complete, ready for Plan 03-02
-Last activity: 2026-03-06 -- Plan 03-01 executed (iOS project scaffold + APIClient with tests)
+Phase: 3 of 4 (iOS App) -- COMPLETE
+Plan: 2 of 2 in current phase (2 complete)
+Status: Phase 3 complete, ready for Phase 4
+Last activity: 2026-03-06 -- Plan 03-02 executed (voice input, transcription, SwiftUI interface, device verified)
 
-Progress: [████████░░] 86%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 7min
-- Total execution time: 0.60 hours
+- Total plans completed: 7
+- Average duration: varies (5 auto plans ~7min avg, 2 iOS plans included device verification)
+- Total execution time: ~1 hour
 
 **By Phase:**
 
@@ -53,6 +53,7 @@ Progress: [████████░░] 86%
 *Updated after each plan completion*
 | Phase 02 P02 | 3min | 2 tasks | 6 files |
 | Phase 03 P01 | 3min | 2 tasks | 8 files |
+| Phase 03 P02 | multi-session | 4 tasks | 21 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,12 @@ Recent decisions affecting current work:
 - [03-01]: XcodeGen for project generation instead of manual .xcodeproj
 - [03-01]: MockURLProtocol for test isolation -- no real server needed
 - [03-01]: Generic performRequest<Body,Response> helper for DRY HTTP calls
+- [03-02]: gemma3:12b-cloud model for fast ~3s response pipeline
+- [03-02]: Skip classify step, fetch brain+web in parallel for speed
+- [03-02]: ATS exception for HTTP networking to Tailscale Mac Mini
+- [03-02]: Auto-detect reminder intent in /ask for Apple Reminders creation
+- [03-02]: Route news queries to SearXNG news category
+- [03-02]: Full-screen response area with compact input bar layout
 
 ### Pending Todos
 
@@ -91,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-06T21:56:42Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-03-07T07:21:44.099Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None

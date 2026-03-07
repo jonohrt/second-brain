@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Server Foundation** - Fastify HTTP server with auth, SearXNG deployment, capture endpoint, and Ollama client with fallback
 - [ ] **Phase 2: Ask Pipeline** - RAG retrieval, LLM routing, web search integration, and answer generation via /ask endpoint
-- [ ] **Phase 3: iOS App** - SwiftUI client with push-to-talk recording, WhisperKit transcription, API integration, and response display
+- [x] **Phase 3: iOS App** - SwiftUI client with push-to-talk recording, WhisperKit transcription, API integration, and response display (completed 2026-03-07)
 - [ ] **Phase 4: Enhancements** - Text-to-speech readback and source attribution display in the iOS app
 
 ## Phase Details
@@ -89,5 +89,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Server Foundation | 2/3 | In Progress|  |
 | 2. Ask Pipeline | 0/2 | Not started | - |
-| 3. iOS App | 0/2 | Not started | - |
+| 3. iOS App | 2/2 | Complete   | 2026-03-07 |
 | 4. Enhancements | 0/1 | Not started | - |
