@@ -46,40 +46,33 @@ export class AskPipeline {
   }
 
   async ask(question: string): Promise<AskResult> {
-    // 1. Classify question
-    let route = await this.ollamaChat.classify(question);
-
-    // 2. Retrieve brain context (if brain or both)
-    let brainResults: BrainResult[] = [];
-    if (route === 'brain' || route === 'both') {
-      try {
-        const embedding = await this.embeddings.embed(question);
-        brainResults = await this.supabase.searchWithScores(embedding, {
-          threshold: this.config.similarityThreshold,
-          limit: this.config.maxBrainResults,
-        });
-
-        // Fall back from brain to web when no results found
-        if (route === 'brain' && brainResults.length === 0) {
-          route = 'web';
+    // Fetch brain + web context in parallel (skip classify step for speed)
+    const [brainResults, webResults] = await Promise.all([
+      (async (): Promise<BrainResult[]> => {
+        try {
+          const embedding = await this.embeddings.embed(question);
+          return await this.supabase.searchWithScores(embedding, {
+            threshold: this.config.similarityThreshold,
+            limit: this.config.maxBrainResults,
+          });
+        } catch {
+          return [];
         }
-      } catch {
-        // Embeddings service unavailable -- fall back to web
-        route = route === 'both' ? 'both' : 'web';
-      }
-    }
+      })(),
+      (async (): Promise<SearchResult[]> => {
+        try {
+          return await this.searxng.search(question, {
+            limit: this.config.maxWebResults,
+          });
+        } catch {
+          return [];
+        }
+      })(),
+    ]);
 
-    // 3. Retrieve web context (if web or both, or after brain fallback)
-    let webResults: SearchResult[] = [];
-    if (route === 'web' || route === 'both') {
-      try {
-        webResults = await this.searxng.search(question, {
-          limit: this.config.maxWebResults,
-        });
-      } catch {
-        // SearXNG unavailable -- continue with whatever we have
-      }
-    }
+    let route: 'brain' | 'web' | 'both' = 'both';
+    if (brainResults.length > 0 && webResults.length === 0) route = 'brain';
+    else if (brainResults.length === 0) route = 'web';
 
     // 4. Build generation prompt
     const messages = buildGenerationPrompt(question, brainResults, webResults);
