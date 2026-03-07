@@ -7,10 +7,11 @@ class TranscriptionService {
     /// Whether the WhisperKit model has been loaded and is ready for transcription.
     var isReady: Bool { whisperKit != nil }
 
-    /// Downloads and initializes the WhisperKit base model.
-    /// This may take 30+ seconds on first launch while the model downloads.
+    /// Initializes WhisperKit with a persistent model cache.
     func initialize() async throws {
-        let config = WhisperKitConfig(model: "base")
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let modelDir = documentsURL.appendingPathComponent("WhisperKitModels").path
+        let config = WhisperKitConfig(model: "base", modelFolder: modelDir)
         whisperKit = try await WhisperKit(config)
     }
 
