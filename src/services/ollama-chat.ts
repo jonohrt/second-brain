@@ -24,7 +24,7 @@ export class OllamaChatService {
     private baseUrl: string,
     private cloudModel: string,
     private localModel: string,
-    private timeout: number = 10000,
+    private timeout: number = 120000,
   ) {}
 
   async chat(opts: {
@@ -44,7 +44,7 @@ export class OllamaChatService {
           model: opts.model,
           messages: opts.messages,
           stream: false,
-          keep_alive: 0,
+          keep_alive: "5m",
           ...(opts.format !== undefined && { format: opts.format }),
           ...(opts.options !== undefined && { options: opts.options }),
         }),

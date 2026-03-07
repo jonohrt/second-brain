@@ -38,7 +38,7 @@ function buildAskPipeline(config: Config, services: Services): AskPipeline {
   const ollamaChat = new OllamaChatService(
     config.ollama.baseUrl,
     'qwen3.5:cloud',
-    'qwen2.5:7b',
+    'qwen3:4b',
   );
   const searxng = new SearxngService('http://localhost:8888');
   return new AskPipeline(ollamaChat, searxng, services.embeddings, services.supabase);
