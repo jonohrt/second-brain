@@ -15,14 +15,16 @@ targets:
     type: application
     platform: iOS
     sources:
-      - SecondBrain
+      - path: SecondBrain
+        excludes:
+          - Info.plist
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jimi.secondbrain
         GENERATE_INFOPLIST_FILE: true
         CODE_SIGN_STYLE: Automatic
     info:
-      path: SecondBrain/Info.plist
+      path: Generated/Info.plist
       properties:
         NSMicrophoneUsageDescription: "SecondBrain needs microphone access to record your voice for transcription."
         NSAppTransportSecurity:
