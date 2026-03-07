@@ -18,10 +18,15 @@ targets:
       - SecondBrain
     settings:
       base:
-        INFOPLIST_FILE: SecondBrain/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.jimi.secondbrain
-        GENERATE_INFOPLIST_FILE: false
+        GENERATE_INFOPLIST_FILE: true
         CODE_SIGN_STYLE: Automatic
+    info:
+      path: SecondBrain/Info.plist
+      properties:
+        NSMicrophoneUsageDescription: "SecondBrain needs microphone access to record your voice for transcription."
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
     dependencies:
       - package: WhisperKit
 
