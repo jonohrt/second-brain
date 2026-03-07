@@ -75,10 +75,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can toggle TTS on and the app reads the response aloud, splitting long text into sentences to avoid cutoff
   2. When the answer was informed by vault notes, the response screen shows the note titles/paths that were used
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — SpeechService TTS with sentence splitting, source attribution UI, and device verification
 
 ## Progress
 
