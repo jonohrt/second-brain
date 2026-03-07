@@ -45,7 +45,13 @@ export class AskPipeline {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
+  private isNewsQuery(question: string): boolean {
+    return /\b(news|headline|article|current event|happening|latest|today'?s|breaking)\b/i.test(question);
+  }
+
   async ask(question: string): Promise<AskResult> {
+    const searchCategories = this.isNewsQuery(question) ? 'news' : 'general';
+
     // Fetch brain + web context in parallel (skip classify step for speed)
     const [brainResults, webResults] = await Promise.all([
       (async (): Promise<BrainResult[]> => {
@@ -62,6 +68,7 @@ export class AskPipeline {
       (async (): Promise<SearchResult[]> => {
         try {
           return await this.searxng.search(question, {
+            categories: searchCategories,
             limit: this.config.maxWebResults,
           });
         } catch {
