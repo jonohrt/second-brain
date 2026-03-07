@@ -66,20 +66,20 @@ class AppViewModel {
 
     /// Starts recording from the microphone. Requires WhisperKit to be ready.
     func startRecording() {
-        guard isWhisperReady else { return }
+        guard isWhisperReady, !isRecording else { return }
         answer = ""
         error = nil
-        isRecording = true
         do {
             _ = try recorder.startRecording()
+            isRecording = true
         } catch {
             self.error = "Failed to start recording: \(error.localizedDescription)"
-            isRecording = false
         }
     }
 
     /// Stops recording and begins transcription.
     func stopRecording() {
+        guard isRecording else { return }
         isRecording = false
         guard let url = recorder.stopRecording() else { return }
         isTranscribing = true
