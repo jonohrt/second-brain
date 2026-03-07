@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-07T07:25:55.493Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-07T18:38:20.247Z"
 last_activity: 2026-03-06 -- Plan 03-02 executed (voice input, transcription, SwiftUI interface, device verified)
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 8
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Ask a question by voice from anywhere and get an answer grounded in your personal knowledge base and the web -- hands-free, free of cost.
-**Current focus:** Phase 3 complete, ready for Phase 4: Enhancements
+**Current focus:** All phases complete -- v1.0 milestone achieved
 
 ## Current Position
 
-Phase: 3 of 4 (iOS App) -- COMPLETE
-Plan: 2 of 2 in current phase (2 complete)
-Status: Phase 3 complete, ready for Phase 4
-Last activity: 2026-03-06 -- Plan 03-02 executed (voice input, transcription, SwiftUI interface, device verified)
+Phase: 4 of 4 (Enhancements) -- COMPLETE
+Plan: 1 of 1 in current phase (1 complete)
+Status: All phases complete, v1.0 milestone achieved
+Last activity: 2026-03-07 -- Plan 04-01 executed (TTS with sentence splitting, source attribution, device verified)
 
 Progress: [██████████] 100%
 
@@ -54,6 +54,7 @@ Progress: [██████████] 100%
 | Phase 02 P02 | 3min | 2 tasks | 6 files |
 | Phase 03 P01 | 3min | 2 tasks | 8 files |
 | Phase 03 P02 | multi-session | 4 tasks | 21 files |
+| Phase 04 P01 | multi-session | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,8 @@ Recent decisions affecting current work:
 - [03-02]: Auto-detect reminder intent in /ask for Apple Reminders creation
 - [03-02]: Route news queries to SearXNG news category
 - [03-02]: Full-screen response area with compact input bar layout
+- [Phase 04]: NLTokenizer for sentence splitting instead of regex -- handles abbreviations correctly
+- [Phase 04]: SpeechService queues one AVSpeechUtterance per sentence to avoid iOS cutoff on long text
 
 ### Pending Todos
 
@@ -98,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T07:21:44.099Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-03-07T18:38:20.245Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
