@@ -44,7 +44,7 @@ export class OllamaChatService {
           model: opts.model,
           messages: opts.messages,
           stream: false,
-          keep_alive: "5m",
+          keep_alive: "30m",
           ...(opts.format !== undefined && { format: opts.format }),
           ...(opts.options !== undefined && { options: opts.options }),
         }),

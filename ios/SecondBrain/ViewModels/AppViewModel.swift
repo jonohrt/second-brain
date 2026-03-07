@@ -27,8 +27,8 @@ class AppViewModel {
     /// Whether WhisperKit has finished downloading and loading the model
     var isWhisperReady: Bool = false
 
-    /// First-launch setup message shown during WhisperKit model download
-    var setupMessage: String? = "Downloading speech model..."
+    /// Setup message shown while WhisperKit loads
+    var setupMessage: String? = nil
 
     // MARK: - Private Services
 
@@ -52,13 +52,14 @@ class AppViewModel {
 
     /// Downloads and initializes the WhisperKit model. Call once on app launch.
     func initializeWhisper() async {
-        setupMessage = "Downloading speech model..."
+        setupMessage = "Loading speech model..."
         do {
             try await transcriber.initialize()
             isWhisperReady = true
             setupMessage = nil
         } catch {
-            setupMessage = "Failed to load speech model: \(error.localizedDescription)"
+            setupMessage = nil
+            self.error = "Voice unavailable: \(error.localizedDescription)"
         }
     }
 

@@ -89,6 +89,19 @@ export async function startServer(): Promise<FastifyInstance> {
   await app.listen({ port, host: '0.0.0.0' });
   app.log.info(`Server listening on 0.0.0.0:${port} -- accessible via Tailscale`);
 
+  // Pre-warm the LLM model so first request is fast
+  fetch(`${config.ollama.baseUrl}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gemma3:12b-cloud',
+      messages: [{ role: 'user', content: 'hi' }],
+      stream: false,
+      keep_alive: '30m',
+    }),
+  }).then(() => app.log.info('LLM model pre-warmed'))
+    .catch(() => app.log.warn('LLM model pre-warm failed'));
+
   return app;
 }
 
