@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var viewModel = AppViewModel()
+    @FocusState private var isEditorFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -62,6 +63,7 @@ struct ContentView: View {
                 VStack(spacing: 8) {
                     ZStack(alignment: .topLeading) {
                         TextEditor(text: $viewModel.transcription)
+                            .focused($isEditorFocused)
                             .frame(minHeight: 80, maxHeight: 120)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
@@ -77,6 +79,7 @@ struct ContentView: View {
                     }
 
                     Button {
+                        isEditorFocused = false
                         Task { await viewModel.sendQuestion() }
                     } label: {
                         Text("Send")
