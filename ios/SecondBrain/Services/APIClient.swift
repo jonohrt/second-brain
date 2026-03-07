@@ -48,7 +48,7 @@ struct APIClient {
         path: String,
         body: Body
     ) async throws -> Response {
-        let url = baseURL.appendingPathComponent(path)
+        let url = URL(string: path, relativeTo: baseURL)!
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
