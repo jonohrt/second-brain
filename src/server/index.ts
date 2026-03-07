@@ -37,8 +37,8 @@ function buildServices(config: Config): Services {
 function buildAskPipeline(config: Config, services: Services): AskPipeline {
   const ollamaChat = new OllamaChatService(
     config.ollama.baseUrl,
-    'gemma3:12b-cloud',
-    'glm-5:cloud',
+    'minimax-m2.5:cloud',
+    'minimax-m2.5:cloud',
   );
   const searxng = new SearxngService('http://localhost:8888');
   return new AskPipeline(ollamaChat, searxng, services.embeddings, services.supabase);
@@ -94,7 +94,7 @@ export async function startServer(): Promise<FastifyInstance> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'gemma3:12b-cloud',
+      model: 'minimax-m2.5:cloud',
       messages: [{ role: 'user', content: 'hi' }],
       stream: false,
       keep_alive: '30m',
