@@ -170,6 +170,7 @@ struct ContentView: View {
                             .frame(minHeight: 40, maxHeight: 80)
                             #if os(macOS)
                             .font(.body)
+                            .contentMargins(8)
                             #endif
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
