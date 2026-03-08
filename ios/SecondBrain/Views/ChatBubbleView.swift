@@ -18,19 +18,19 @@ struct ChatBubbleView: View {
                     .foregroundColor(isUser ? .white : .primary)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 
-                // Source attribution for assistant messages
+                // Source attribution for assistant messages (vault sources only)
                 if !isUser && !sources.isEmpty {
-                    VStack(alignment: .leading, spacing: 2) {
-                        ForEach(sources) { source in
-                            HStack(spacing: 4) {
-                                Image(systemName: "doc.text")
-                                Text(source.title ?? source.path ?? "Unknown")
-                            }
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                    let vaultSources = sources.filter { $0.type == "vault" }
+                    if !vaultSources.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(systemName: "doc.text")
+                            Text(vaultSources.compactMap { $0.title ?? $0.path?.components(separatedBy: "/").last }.joined(separator: ", "))
+                                .lineLimit(1)
                         }
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 4)
                     }
-                    .padding(.horizontal, 4)
                 }
             }
 

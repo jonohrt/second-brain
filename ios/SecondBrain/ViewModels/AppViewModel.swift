@@ -117,7 +117,9 @@ class AppViewModel {
     // MARK: - API
 
     func sendQuestion() {
-        let trimmed = transcription.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = transcription
+            .replacingOccurrences(of: "[blank audio]", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         isLoading = true
         error = nil
