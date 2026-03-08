@@ -51,6 +51,15 @@ struct ConversationListView: View {
                             }
                             #if os(macOS)
                             .buttonStyle(.plain)
+                            .contextMenu {
+                                Button("Delete", role: .destructive) {
+                                    if let index = viewModel.conversations.firstIndex(where: { $0.id == conversation.id }) {
+                                        let toDelete = viewModel.conversations[index]
+                                        viewModel.conversations.remove(at: index)
+                                        Task { await viewModel.deleteConversation(toDelete) }
+                                    }
+                                }
+                            }
                             #endif
                         }
                         .onDelete { indexSet in

@@ -16,6 +16,7 @@ struct SecondBrainMacApp: App {
         // Menu bar icon
         MenuBarExtra("Second Brain", systemImage: "brain.head.profile") {
             Button("Open Chat") {
+                NSApplication.shared.activate()
                 openWindow(id: "main")
             }
             .keyboardShortcut("b", modifiers: [.command, .shift])
@@ -23,6 +24,7 @@ struct SecondBrainMacApp: App {
             Divider()
 
             Button("New Conversation") {
+                NSApplication.shared.activate()
                 openWindow(id: "main")
             }
             .keyboardShortcut("n", modifiers: .command)
