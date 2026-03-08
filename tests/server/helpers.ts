@@ -3,6 +3,8 @@ import { createApp } from '../../src/server/index.js';
 import type { Config } from '../../src/types.js';
 import type { Services } from '../../src/mcp/server.js';
 import type { AskPipeline } from '../../src/services/ask-pipeline.js';
+import type { IntentRouter } from '../../src/services/intent-router.js';
+import type { ConversationService } from '../../src/services/conversation.js';
 
 const TEST_CONFIG: Config = {
   vaultPath: '/tmp/test-vault',
@@ -53,13 +55,14 @@ export function buildTestAppWithServices(overrides?: MockOverrides) {
 
 interface AskMockOverrides {
   askFn?: ReturnType<typeof vi.fn>;
+  intentFn?: ReturnType<typeof vi.fn>;
 }
 
 export function buildTestAppWithAsk(overrides?: AskMockOverrides) {
   const mockServices: Services = {
     vault: { writeEntry: vi.fn(), readEntry: vi.fn(), listEntries: vi.fn(() => []), getEntryPath: vi.fn() } as unknown as Services['vault'],
     embeddings: { isAvailable: vi.fn(async () => false), embed: vi.fn() } as unknown as Services['embeddings'],
-    supabase: { upsertEntry: vi.fn(async () => {}) } as unknown as Services['supabase'],
+    supabase: { upsertEntry: vi.fn(async () => {}), findTaskByTitle: vi.fn(async () => []) } as unknown as Services['supabase'],
     config: TEST_CONFIG,
   };
 
@@ -72,5 +75,24 @@ export function buildTestAppWithAsk(overrides?: AskMockOverrides) {
     })),
   } as unknown as AskPipeline;
 
-  return createApp(TEST_CONFIG, { services: mockServices, askPipeline: mockAskPipeline });
+  const mockIntentRouter = {
+    classify: overrides?.intentFn ?? vi.fn(async () => ({ intent: 'ask' })),
+  } as unknown as IntentRouter;
+
+  const mockConversations = {
+    createConversation: vi.fn(async () => ({ id: 'conv-test-123', title: 'Test', createdAt: new Date(), updatedAt: new Date() })),
+    addMessage: vi.fn(async () => ({ id: 'msg-1', conversationId: 'conv-test-123', role: 'user', content: '', metadata: {}, createdAt: new Date() })),
+    getRecentMessages: vi.fn(async () => []),
+    getMessages: vi.fn(async () => []),
+    listConversations: vi.fn(async () => []),
+    deleteConversation: vi.fn(async () => {}),
+    getConversation: vi.fn(async () => null),
+  } as unknown as ConversationService;
+
+  return createApp(TEST_CONFIG, {
+    services: mockServices,
+    askPipeline: mockAskPipeline,
+    intentRouter: mockIntentRouter,
+    conversations: mockConversations,
+  });
 }

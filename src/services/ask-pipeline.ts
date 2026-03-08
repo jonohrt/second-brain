@@ -49,7 +49,7 @@ export class AskPipeline {
     return /\b(news|headline|article|current event|happening|latest|today'?s|breaking)\b/i.test(question);
   }
 
-  async ask(question: string): Promise<AskResult> {
+  async ask(question: string, conversationHistory?: Array<{ role: string; content: string }>): Promise<AskResult> {
     const searchCategories = this.isNewsQuery(question) ? 'news' : 'general';
 
     // Fetch brain + web context in parallel (skip classify step for speed)
@@ -82,7 +82,7 @@ export class AskPipeline {
     else if (brainResults.length === 0) route = 'web';
 
     // 4. Build generation prompt
-    const messages = buildGenerationPrompt(question, brainResults, webResults);
+    const messages = buildGenerationPrompt(question, brainResults, webResults, conversationHistory);
 
     // 5. Generate answer
     const result = await this.ollamaChat.chatWithFallback(messages);
@@ -115,6 +115,7 @@ function buildGenerationPrompt(
   question: string,
   brainResults: BrainResult[],
   webResults: SearchResult[],
+  conversationHistory?: Array<{ role: string; content: string }>,
 ): ChatMessage[] {
   const contextParts: string[] = [];
 
@@ -150,8 +151,15 @@ ${contextParts.join('\n')}`;
       'You are a helpful assistant. Answer based on your general knowledge. Note that no personal notes or web results were found.';
   }
 
-  return [
-    { role: 'system', content: systemContent },
-    { role: 'user', content: question },
-  ];
+  const messages: ChatMessage[] = [{ role: 'system', content: systemContent }];
+
+  // Include conversation history for multi-turn context
+  if (conversationHistory && conversationHistory.length > 0) {
+    for (const msg of conversationHistory) {
+      messages.push({ role: msg.role, content: msg.content });
+    }
+  }
+
+  messages.push({ role: 'user', content: question });
+  return messages;
 }

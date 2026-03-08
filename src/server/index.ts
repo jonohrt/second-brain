@@ -13,6 +13,8 @@ import { authPlugin } from './plugins/auth.js';
 import { OllamaChatService } from '../services/ollama-chat.js';
 import { SearxngService } from '../services/searxng.js';
 import { AskPipeline } from '../services/ask-pipeline.js';
+import { IntentRouter } from '../services/intent-router.js';
+import { ConversationService } from '../services/conversation.js';
 
 // NOTE: The Ollama process must be started with OLLAMA_MAX_LOADED_MODELS=1
 // to avoid memory pressure on the 8GB Mac Mini. Ollama handles this natively
@@ -25,6 +27,10 @@ export interface CreateAppOptions {
   services?: Services;
   /** Pre-built AskPipeline (for testing with mocks) */
   askPipeline?: AskPipeline;
+  /** Pre-built IntentRouter (for testing with mocks) */
+  intentRouter?: IntentRouter;
+  /** Pre-built ConversationService (for testing with mocks) */
+  conversations?: ConversationService;
 }
 
 function buildServices(config: Config): Services {
@@ -34,20 +40,19 @@ function buildServices(config: Config): Services {
   return { supabase, embeddings, vault, config };
 }
 
-function buildAskPipeline(config: Config, services: Services): AskPipeline {
+export function createApp(config: Config, opts?: CreateAppOptions): FastifyInstance {
+  const app = Fastify({ logger: true });
+  const services = opts?.services ?? buildServices(config);
+
   const ollamaChat = new OllamaChatService(
     config.ollama.baseUrl,
     'minimax-m2.5:cloud',
     'minimax-m2.5:cloud',
   );
   const searxng = new SearxngService('http://localhost:8888');
-  return new AskPipeline(ollamaChat, searxng, services.embeddings, services.supabase);
-}
-
-export function createApp(config: Config, opts?: CreateAppOptions): FastifyInstance {
-  const app = Fastify({ logger: true });
-  const services = opts?.services ?? buildServices(config);
-  const askPipeline = opts?.askPipeline ?? buildAskPipeline(config, services);
+  const askPipeline = opts?.askPipeline ?? new AskPipeline(ollamaChat, searxng, services.embeddings, services.supabase);
+  const intentRouter = opts?.intentRouter ?? new IntentRouter(ollamaChat);
+  const conversationService = opts?.conversations ?? new ConversationService(config.supabase.url, config.supabase.key);
 
   // Public routes -- no auth required
   app.register(healthRoutes);
@@ -61,7 +66,12 @@ export function createApp(config: Config, opts?: CreateAppOptions): FastifyInsta
       await scoped.register(captureRoutes, { services });
 
       // Ask endpoint
-      await scoped.register(askRoutes, { askPipeline, services });
+      await scoped.register(askRoutes, {
+        askPipeline,
+        services,
+        intentRouter,
+        conversations: conversationService,
+      });
 
       // Register any protected routes passed via options
       if (opts?.protectedRoutes) {

@@ -9,7 +9,7 @@ describe('POST /ask', () => {
     if (app) await app.close();
   });
 
-  it('returns 200 with answer, sources, route, model for valid request', async () => {
+  it('returns 200 with answer, sources, route, model, conversation_id for valid request', async () => {
     app = buildTestAppWithAsk();
     await app.ready();
 
@@ -26,6 +26,7 @@ describe('POST /ask', () => {
     expect(body.sources).toEqual([]);
     expect(body.route).toBe('brain');
     expect(body.model).toBe('test-model');
+    expect(body.conversation_id).toBe('conv-test-123');
   });
 
   it('returns 400 for empty body', async () => {
@@ -87,5 +88,29 @@ describe('POST /ask', () => {
     const body = JSON.parse(res.body);
     expect(body.error).toBe('Ask failed');
     expect(body.message).toContain('LLM exploded');
+  });
+
+  it('handles capture_task intent', async () => {
+    app = buildTestAppWithAsk({
+      intentFn: vi.fn(async () => ({
+        intent: 'capture_task',
+        title: 'Fix login bug',
+        project: 'tesla',
+        tags: ['bug'],
+      })),
+    });
+    await app.ready();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/ask',
+      headers: { authorization: 'Bearer test-token-123' },
+      payload: { text: 'Capture a task to fix the login bug' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.answer).toContain('Fix login bug');
+    expect(body.route).toBe('capture');
   });
 });
