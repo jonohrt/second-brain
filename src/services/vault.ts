@@ -131,6 +131,16 @@ export class VaultService {
     const createdAt = createdRaw ? new Date(createdRaw as string) : new Date();
     const updatedAt = updatedRaw ? new Date(updatedRaw as string) : new Date();
 
+    // Build searchable content: include useful frontmatter fields that aren't in the body
+    const extraParts: string[] = [];
+    if (data.date) extraParts.push(`Date: ${data.date}`);
+    if (data.endDate) extraParts.push(`End date: ${data.endDate}`);
+    if (data.allDay) extraParts.push('All day event');
+    const bodyContent = content.trim();
+    const fullContent = extraParts.length > 0
+      ? `${extraParts.join('\n')}\n\n${bodyContent}`
+      : bodyContent;
+
     return {
       type,
       project: data.project as string | undefined,
@@ -138,7 +148,7 @@ export class VaultService {
       branch: data.branch as string | undefined,
       prNumber: data.pr as number | undefined,
       title,
-      content: content.trim(),
+      content: fullContent,
       metadata: { tags: data.tags ?? [], ...(data.space ? { space: data.space } : {}) },
       createdAt,
       updatedAt,
