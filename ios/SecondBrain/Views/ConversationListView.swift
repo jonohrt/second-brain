@@ -160,8 +160,10 @@ struct ConversationListView: View {
                     } else {
                         HStack {
                             if !viewModel.conversations.isEmpty {
-                                Button("Select") {
+                                Button {
                                     isEditing = true
+                                } label: {
+                                    Image(systemName: "checkmark.circle")
                                 }
                             }
                             Button {
