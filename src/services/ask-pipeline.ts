@@ -133,7 +133,6 @@ function buildGenerationPrompt(
     contextParts.push('## Web Search Results:');
     for (const result of webResults) {
       contextParts.push(`### ${result.title}`);
-      contextParts.push(`URL: ${result.url}`);
       contextParts.push(result.content);
       contextParts.push('');
     }
@@ -141,14 +140,20 @@ function buildGenerationPrompt(
 
   let systemContent: string;
   if (contextParts.length > 0) {
-    systemContent = `You are a helpful assistant answering questions using the provided context.
-Ground your answer in the context below. If the context does not contain relevant information, say so.
-When citing personal notes, mention the note title. When citing web results, mention the source.
+    systemContent = `You are a helpful personal AI assistant. You have access to the user's personal notes and web search results as context.
+
+Rules:
+- Answer the user's question directly and concisely.
+- Use the context below to inform your answer, but also use your own knowledge freely.
+- If the context is irrelevant to the question, ignore it and answer from your own knowledge.
+- NEVER include URLs or links in your response. Sources are tracked separately.
+- Do NOT list or summarize search results. Synthesize the information into a natural answer.
+- When referencing personal notes, mention the note title naturally.
 
 ${contextParts.join('\n')}`;
   } else {
     systemContent =
-      'You are a helpful assistant. Answer based on your general knowledge. Note that no personal notes or web results were found.';
+      'You are a helpful personal AI assistant. Answer based on your knowledge. Be direct and concise.';
   }
 
   const messages: ChatMessage[] = [{ role: 'system', content: systemContent }];

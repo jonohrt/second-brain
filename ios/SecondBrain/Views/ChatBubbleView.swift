@@ -6,12 +6,19 @@ struct ChatBubbleView: View {
 
     var isUser: Bool { message.role == "user" }
 
+    private var displayContent: String {
+        message.content
+            .replacingOccurrences(of: "[blank audio]", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     var body: some View {
+        if displayContent.isEmpty { EmptyView() } else {
         HStack {
             if isUser { Spacer(minLength: 60) }
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
-                Text(message.content)
+                Text(displayContent)
                     .textSelection(.enabled)
                     .padding(12)
                     .background(isUser ? Color.blue : Color(.systemGray5))
@@ -35,6 +42,7 @@ struct ChatBubbleView: View {
             }
 
             if !isUser { Spacer(minLength: 60) }
+        }
         }
     }
 }
