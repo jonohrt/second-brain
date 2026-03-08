@@ -24,8 +24,8 @@ struct APIClient {
 
     // MARK: - Public API
 
-    func ask(text: String) async throws -> AskResponse {
-        try await performRequest(method: "POST", path: "/ask", body: AskRequest(text: text))
+    func ask(text: String, conversationId: String? = nil) async throws -> AskResponse {
+        try await performRequest(method: "POST", path: "/ask", body: AskRequest(text: text, conversation_id: conversationId))
     }
 
     func capture(
@@ -39,6 +39,20 @@ struct APIClient {
             path: "/capture",
             body: CaptureRequest(text: text, title: title, type: type, tags: tags)
         )
+    }
+
+    func listConversations() async throws -> [ConversationSummary] {
+        let response: ConversationsResponse = try await performGet(path: "/conversations")
+        return response.conversations
+    }
+
+    func getMessages(conversationId: String) async throws -> [ChatMessage] {
+        let response: MessagesResponse = try await performGet(path: "/conversations/\(conversationId)/messages")
+        return response.messages
+    }
+
+    func deleteConversation(id: String) async throws {
+        let _: [String: Bool] = try await performGet(path: "/conversations/\(id)", method: "DELETE")
     }
 
     // MARK: - Private
@@ -56,6 +70,57 @@ struct APIClient {
         request.timeoutInterval = AppConfig.requestTimeout
 
         request.httpBody = try JSONEncoder().encode(body)
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch let urlError as URLError {
+            if urlError.code == .timedOut ||
+               urlError.code == .cannotConnectToHost ||
+               urlError.code == .cannotFindHost ||
+               urlError.code == .networkConnectionLost {
+                throw APIError.serverUnreachable
+            }
+            throw APIError.networkError(urlError)
+        } catch {
+            throw APIError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.serverUnreachable
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let message: String
+            if let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                message = errorResponse.message ?? errorResponse.error
+            } else {
+                message = "HTTP \(httpResponse.statusCode)"
+            }
+            throw APIError.requestFailed(statusCode: httpResponse.statusCode, message: message)
+        }
+
+        do {
+            return try JSONDecoder().decode(Response.self, from: data)
+        } catch {
+            let raw = String(data: data, encoding: .utf8) ?? "non-utf8"
+            print("[APIClient] Decode failed. Raw response: \(raw.prefix(500))")
+            print("[APIClient] Decode error: \(error)")
+            throw APIError.decodingError(error)
+        }
+    }
+
+    private func performGet<Response: Decodable>(
+        path: String,
+        method: String = "GET"
+    ) async throws -> Response {
+        let url = URL(string: path, relativeTo: baseURL)!
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiToken)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = AppConfig.requestTimeout
 
         let data: Data
         let response: URLResponse
