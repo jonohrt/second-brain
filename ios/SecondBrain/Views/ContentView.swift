@@ -106,8 +106,6 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.systemGray6))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .padding(.horizontal)
 
             // Error area
             if let errorMessage = viewModel.error {
