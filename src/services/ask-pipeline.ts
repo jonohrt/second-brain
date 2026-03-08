@@ -11,7 +11,7 @@ export interface AskConfig {
 }
 
 const DEFAULT_CONFIG: AskConfig = {
-  similarityThreshold: 0.65,
+  similarityThreshold: 0.5,
   maxBrainResults: 5,
   maxWebResults: 5,
 };
