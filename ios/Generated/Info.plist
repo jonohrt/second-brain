@@ -25,5 +25,10 @@
 	</dict>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>SecondBrain needs microphone access to record your voice for transcription.</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string></string>
+	</dict>
 </dict>
 </plist>
