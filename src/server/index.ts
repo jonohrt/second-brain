@@ -12,14 +12,12 @@ import { askRoutes } from './routes/ask.js';
 import { conversationRoutes } from './routes/conversations.js';
 import { authPlugin } from './plugins/auth.js';
 import { OllamaChatService } from '../services/ollama-chat.js';
+import type { ChatService } from '../services/ollama-chat.js';
+import { OpenRouterChatService } from '../services/openrouter-chat.js';
 import { SearxngService } from '../services/searxng.js';
 import { AskPipeline } from '../services/ask-pipeline.js';
 import { IntentRouter } from '../services/intent-router.js';
 import { ConversationService } from '../services/conversation.js';
-
-// NOTE: The Ollama process must be started with OLLAMA_MAX_LOADED_MODELS=1
-// to avoid memory pressure on the 8GB Mac Mini. Ollama handles this natively
-// via environment variable -- no application code needed.
 
 export interface CreateAppOptions {
   /** Callback to register routes inside the auth-protected scope */
@@ -41,18 +39,25 @@ function buildServices(config: Config): Services {
   return { supabase, embeddings, vault, config };
 }
 
-export function createApp(config: Config, opts?: CreateAppOptions): FastifyInstance {
-  const app = Fastify({ logger: true });
-  const services = opts?.services ?? buildServices(config);
-
-  const ollamaChat = new OllamaChatService(
+function buildChatService(config: Config): ChatService {
+  if (config.openrouter) {
+    return new OpenRouterChatService(config.openrouter.apiKey, config.openrouter.model);
+  }
+  return new OllamaChatService(
     config.ollama.baseUrl,
     'gemma3:27b-cloud',
     'gemma3:27b-cloud',
   );
+}
+
+export function createApp(config: Config, opts?: CreateAppOptions): FastifyInstance {
+  const app = Fastify({ logger: true });
+  const services = opts?.services ?? buildServices(config);
+
+  const chatService = buildChatService(config);
   const searxng = new SearxngService('http://localhost:8888');
-  const askPipeline = opts?.askPipeline ?? new AskPipeline(ollamaChat, searxng, services.embeddings, services.supabase);
-  const intentRouter = opts?.intentRouter ?? new IntentRouter(ollamaChat);
+  const askPipeline = opts?.askPipeline ?? new AskPipeline(chatService, searxng, services.embeddings, services.supabase);
+  const intentRouter = opts?.intentRouter ?? new IntentRouter(chatService);
   const conversationService = opts?.conversations ?? new ConversationService(config.supabase.url, config.supabase.key);
 
   // Public routes -- no auth required
@@ -101,20 +106,9 @@ export async function startServer(): Promise<FastifyInstance> {
 
   const port = config.server.port ?? 3000;
   await app.listen({ port, host: '0.0.0.0' });
-  app.log.info(`Server listening on 0.0.0.0:${port} -- accessible via Tailscale`);
 
-  // Pre-warm the LLM model so first request is fast
-  fetch(`${config.ollama.baseUrl}/api/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'gemma3:27b-cloud',
-      messages: [{ role: 'user', content: 'hi' }],
-      stream: false,
-      keep_alive: '30m',
-    }),
-  }).then(() => app.log.info('LLM model pre-warmed'))
-    .catch(() => app.log.warn('LLM model pre-warm failed'));
+  const provider = config.openrouter ? `OpenRouter (${config.openrouter.model})` : 'Ollama';
+  app.log.info(`Server listening on 0.0.0.0:${port} -- LLM: ${provider}`);
 
   return app;
 }

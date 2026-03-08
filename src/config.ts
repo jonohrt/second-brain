@@ -60,11 +60,17 @@ export function loadConfig(configPath: string): Config {
       }
     : undefined;
 
+  const openrouter = parsed.openrouter as Record<string, string> | undefined;
+  const openrouterConfig = openrouter
+    ? { apiKey: openrouter.api_key, model: openrouter.model }
+    : undefined;
+
   return {
     vaultPath: expandTilde(parsed.vault_path as string),
     contextDir: parsed.context_dir as string,
     supabase: { url: supabase.url, key: supabase.key },
     ollama: { baseUrl: ollama.base_url, model: ollama.model },
+    openrouter: openrouterConfig,
     projects: resolvedProjects,
     voice: voiceConfig,
     server: serverConfig,

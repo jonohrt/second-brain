@@ -1,4 +1,4 @@
-import type { OllamaChatService, ChatMessage } from './ollama-chat.js';
+import type { ChatService, ChatMessage } from './ollama-chat.js';
 import type { SearxngService, SearchResult } from './searxng.js';
 import type { EmbeddingsService } from './embeddings.js';
 import type { SupabaseService } from './supabase.js';
@@ -36,7 +36,7 @@ export class AskPipeline {
   private config: AskConfig;
 
   constructor(
-    private ollamaChat: OllamaChatService,
+    private chatService: ChatService,
     private searxng: SearxngService,
     private embeddings: EmbeddingsService,
     private supabase: SupabaseService,
@@ -85,7 +85,7 @@ export class AskPipeline {
     const messages = buildGenerationPrompt(question, brainResults, webResults, conversationHistory);
 
     // 5. Generate answer
-    const result = await this.ollamaChat.chatWithFallback(messages);
+    const result = await this.chatService.chatWithFallback(messages);
 
     // 6. Assemble sources
     const sources: Source[] = [

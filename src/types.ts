@@ -43,6 +43,10 @@ export interface Config {
     baseUrl: string;
     model: string;
   };
+  openrouter?: {
+    apiKey: string;
+    model: string;
+  };
   projects: Record<string, ProjectConfig>;
   voice?: {
     watchDir: string;

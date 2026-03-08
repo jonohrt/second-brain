@@ -1,4 +1,4 @@
-import type { OllamaChatService, ChatMessage } from './ollama-chat.js';
+import type { ChatService, ChatMessage } from './ollama-chat.js';
 
 export type Intent = 'ask' | 'reminder' | 'capture_task' | 'update_task' | 'update_reminder' | 'capture_note' | 'list_tasks';
 
@@ -38,7 +38,7 @@ Reply with JSON only. Only include fields that are clearly present in the messag
 Today's date is ${new Date().toISOString().slice(0, 10)}.`;
 
 export class IntentRouter {
-  constructor(private ollamaChat: OllamaChatService) {}
+  constructor(private chatService: ChatService) {}
 
   private extractFallback(intent: Intent, text: string): Partial<IntentResult> {
     // Strip common prefixes to get the actual content
@@ -89,7 +89,7 @@ export class IntentRouter {
 
       messages.push({ role: 'user', content: `Intent: ${detectedIntent}\nMessage: ${text}` });
 
-      const result = await this.ollamaChat.chatWithFallback(messages, 'json');
+      const result = await this.chatService.chatWithFallback(messages, 'json');
       const parsed = JSON.parse(result.content);
 
       // If LLM didn't extract a title, use regex fallback

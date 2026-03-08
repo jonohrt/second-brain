@@ -10,6 +10,10 @@ export interface ChatResult {
 
 export type Route = 'brain' | 'web' | 'both';
 
+export interface ChatService {
+  chatWithFallback(messages: ChatMessage[], format?: string | object): Promise<ChatResult>;
+}
+
 const VALID_ROUTES: Route[] = ['brain', 'web', 'both'];
 
 const ROUTING_SYSTEM_PROMPT = `You are a question router. Classify the user's question into one category.
