@@ -60,10 +60,11 @@ struct ContentView: View {
                 ScrollView {
                     if viewModel.messages.isEmpty && !viewModel.isLoading {
                         #if os(iOS)
-                        Text("Ask a question or record a voice note")
+                        let emptyText = "Ask a question or record a voice note"
                         #else
-                        Text("Ask a question")
+                        let emptyText = "Ask a question"
                         #endif
+                        Text(emptyText)
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity)
                             .padding(.top, 80)
