@@ -66,7 +66,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateIcon(badge: Bool) {
         guard let button = statusItem?.button else { return }
-        let config = NSImage.SymbolConfiguration(pointSize: 16, weight: .regular)
+        let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
         if let image = NSImage(systemSymbolName: "brain.head.profile", accessibilityDescription: "Second Brain")?.withSymbolConfiguration(config) {
             image.isTemplate = true
             button.image = image
@@ -76,7 +76,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let dot = NSView(frame: NSRect(x: button.bounds.width - 8, y: button.bounds.height - 8, width: 6, height: 6))
                 dot.setAccessibilityIdentifier(Self.badgeID)
                 dot.wantsLayer = true
-                dot.layer?.backgroundColor = NSColor.red.cgColor
+                dot.layer?.backgroundColor = NSColor.systemGreen.cgColor
                 dot.layer?.cornerRadius = 3
                 button.addSubview(dot)
             }
