@@ -6,3 +6,6 @@ config.yml
 # Generated Xcode project (regenerate with: cd ios && xcodegen generate)
 ios/SecondBrain.xcodeproj/
 ios/.DS_Store
+
+# Worktrees
+.worktrees/
