@@ -150,6 +150,21 @@ export async function askRoutes(
           break;
         }
 
+        case 'list_tasks': {
+          const tasks = await services.supabase.getTasksByStatus('open', { limit: 20 });
+          if (tasks.length === 0) {
+            answer = 'No open tasks found.';
+          } else {
+            const lines = tasks.map((t, i) => {
+              const project = t.project ? ` [${t.project}]` : '';
+              return `${i + 1}. ${t.title}${project}`;
+            });
+            answer = `You have ${tasks.length} open task${tasks.length === 1 ? '' : 's'}:\n\n${lines.join('\n')}`;
+          }
+          route = 'list_tasks';
+          break;
+        }
+
         case 'update_reminder': {
           if (!intent.update_query) {
             answer = 'Could not determine which reminder to update.';
