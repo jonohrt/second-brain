@@ -164,14 +164,37 @@ struct ContentView: View {
                 #endif
 
                 VStack(spacing: 6) {
+                    #if os(macOS)
+                    HStack {
+                        TextField("Ask anything...", text: $viewModel.transcription)
+                            .focused($isEditorFocused)
+                            .textFieldStyle(.plain)
+                            .font(.body)
+                            .padding(10)
+                            .onSubmit {
+                                viewModel.sendQuestion()
+                            }
+
+                        if !viewModel.transcription.isEmpty {
+                            Button {
+                                viewModel.transcription = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.trailing, 8)
+                        }
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    )
+                    #else
                     ZStack(alignment: .topLeading) {
                         TextEditor(text: $viewModel.transcription)
                             .focused($isEditorFocused)
                             .frame(minHeight: 40, maxHeight: 80)
-                            #if os(macOS)
-                            .font(.body)
-                            .contentMargins(8)
-                            #endif
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
@@ -196,6 +219,7 @@ struct ContentView: View {
                                 .allowsHitTesting(false)
                         }
                     }
+                    #endif
 
                     if viewModel.isLoading {
                         Button {
