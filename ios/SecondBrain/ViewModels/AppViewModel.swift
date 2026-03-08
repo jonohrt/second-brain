@@ -242,6 +242,24 @@ class AppViewModel {
         speechService.stop()
     }
 
+    func deleteConversations(_ toDelete: [ConversationSummary]) async {
+        let ids = Set(toDelete.map { $0.id })
+        conversations.removeAll { ids.contains($0.id) }
+        if let current = currentConversationId, ids.contains(current) {
+            startNewConversation()
+        }
+        for conversation in toDelete {
+            do {
+                try await apiClient.deleteConversation(id: conversation.id)
+            } catch {
+                // Re-add failed ones
+                conversations.append(conversation)
+                self.error = "Failed to delete conversation: \(error.localizedDescription)"
+            }
+        }
+        conversations.sort { $0.updatedAt > $1.updatedAt }
+    }
+
     func deleteConversation(_ conversation: ConversationSummary) async {
         do {
             try await apiClient.deleteConversation(id: conversation.id)
