@@ -62,6 +62,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.async { track() }
     }
 
+    private static let badgeID = "unread-badge"
+
     private func updateIcon(badge: Bool) {
         guard let button = statusItem?.button else { return }
         let config = NSImage.SymbolConfiguration(pointSize: 16, weight: .regular)
@@ -70,16 +72,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             button.image = image
         }
         if badge {
-            if button.subviews.first(where: { $0.tag == 999 }) == nil {
+            if button.subviews.first(where: { $0.accessibilityIdentifier() == Self.badgeID }) == nil {
                 let dot = NSView(frame: NSRect(x: button.bounds.width - 8, y: button.bounds.height - 8, width: 6, height: 6))
-                dot.tag = 999
+                dot.setAccessibilityIdentifier(Self.badgeID)
                 dot.wantsLayer = true
                 dot.layer?.backgroundColor = NSColor.red.cgColor
                 dot.layer?.cornerRadius = 3
                 button.addSubview(dot)
             }
         } else {
-            button.subviews.filter { $0.tag == 999 }.forEach { $0.removeFromSuperview() }
+            button.subviews.filter { $0.accessibilityIdentifier() == Self.badgeID }.forEach { $0.removeFromSuperview() }
         }
     }
 
