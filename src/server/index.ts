@@ -56,7 +56,8 @@ export function createApp(config: Config, opts?: CreateAppOptions): FastifyInsta
 
   const chatService = buildChatService(config);
   const searxng = new SearxngService('http://localhost:8888');
-  const askPipeline = opts?.askPipeline ?? new AskPipeline(chatService, searxng, services.embeddings, services.supabase);
+  const modelName = config.openrouter?.model ?? 'Ollama';
+  const askPipeline = opts?.askPipeline ?? new AskPipeline(chatService, searxng, services.embeddings, services.supabase, undefined, modelName);
   const intentRouter = opts?.intentRouter ?? new IntentRouter(chatService);
   const conversationService = opts?.conversations ?? new ConversationService(config.supabase.url, config.supabase.key);
 

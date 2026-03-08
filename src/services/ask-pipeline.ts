@@ -41,6 +41,7 @@ export class AskPipeline {
     private embeddings: EmbeddingsService,
     private supabase: SupabaseService,
     config?: Partial<AskConfig>,
+    private modelName?: string,
   ) {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
@@ -82,7 +83,7 @@ export class AskPipeline {
     else if (brainResults.length === 0) route = 'web';
 
     // 4. Build generation prompt
-    const messages = buildGenerationPrompt(question, brainResults, webResults, conversationHistory);
+    const messages = buildGenerationPrompt(question, brainResults, webResults, conversationHistory, this.modelName);
 
     // 5. Generate answer
     const result = await this.chatService.chatWithFallback(messages);
@@ -116,6 +117,7 @@ function buildGenerationPrompt(
   brainResults: BrainResult[],
   webResults: SearchResult[],
   conversationHistory?: Array<{ role: string; content: string }>,
+  modelName?: string,
 ): ChatMessage[] {
   const contextParts: string[] = [];
 
@@ -140,7 +142,8 @@ function buildGenerationPrompt(
 
   let systemContent: string;
   if (contextParts.length > 0) {
-    systemContent = `You are a helpful personal AI assistant called Second Brain, powered by the Step 3.5 Flash model. You have access to the user's personal notes and web search results as context.
+    const identity = modelName ? ` powered by ${modelName}` : '';
+    systemContent = `You are a helpful personal AI assistant called Second Brain${identity}. You have access to the user's personal notes and web search results as context.
 
 Rules:
 - Answer the user's question directly and concisely.
@@ -152,8 +155,9 @@ Rules:
 
 ${contextParts.join('\n')}`;
   } else {
+    const identity2 = modelName ? ` powered by ${modelName}` : '';
     systemContent =
-      'You are a helpful personal AI assistant called Second Brain, powered by the Step 3.5 Flash model. Answer based on your knowledge. Be direct and concise.';
+      `You are a helpful personal AI assistant called Second Brain${identity2}. Answer based on your knowledge. Be direct and concise.`;
   }
 
   const messages: ChatMessage[] = [{ role: 'system', content: systemContent }];
