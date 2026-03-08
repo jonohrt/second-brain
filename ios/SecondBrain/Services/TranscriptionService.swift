@@ -20,7 +20,11 @@ class TranscriptionService {
             throw TranscriptionError.notInitialized
         }
         let results = try await pipe.transcribe(audioPath: audioURL.path)
-        return results.first?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let text = results.first?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        // WhisperKit emits "[blank audio]" for silence — strip it out
+        let cleaned = text.replacingOccurrences(of: "[blank audio]", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned
     }
 }
 

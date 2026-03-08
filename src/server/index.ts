@@ -47,8 +47,8 @@ export function createApp(config: Config, opts?: CreateAppOptions): FastifyInsta
 
   const ollamaChat = new OllamaChatService(
     config.ollama.baseUrl,
-    'minimax-m2.5:cloud',
-    'minimax-m2.5:cloud',
+    'gemma3:27b-cloud',
+    'gemma3:27b-cloud',
   );
   const searxng = new SearxngService('http://localhost:8888');
   const askPipeline = opts?.askPipeline ?? new AskPipeline(ollamaChat, searxng, services.embeddings, services.supabase);
@@ -108,7 +108,7 @@ export async function startServer(): Promise<FastifyInstance> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'minimax-m2.5:cloud',
+      model: 'gemma3:27b-cloud',
       messages: [{ role: 'user', content: 'hi' }],
       stream: false,
       keep_alive: '30m',

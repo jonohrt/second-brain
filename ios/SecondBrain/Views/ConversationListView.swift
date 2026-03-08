@@ -36,8 +36,9 @@ struct ConversationListView: View {
                             }
                         }
                         .onDelete { indexSet in
-                            for index in indexSet {
-                                let conversation = viewModel.conversations[index]
+                            let toDelete = indexSet.map { viewModel.conversations[$0] }
+                            viewModel.conversations.remove(atOffsets: indexSet)
+                            for conversation in toDelete {
                                 Task { await viewModel.deleteConversation(conversation) }
                             }
                         }

@@ -226,11 +226,14 @@ class AppViewModel {
     func deleteConversation(_ conversation: ConversationSummary) async {
         do {
             try await apiClient.deleteConversation(id: conversation.id)
-            conversations.removeAll { $0.id == conversation.id }
+            // List removal already handled by onDelete in the view
             if currentConversationId == conversation.id {
                 startNewConversation()
             }
         } catch {
+            // Re-add on failure so the row reappears
+            conversations.append(conversation)
+            conversations.sort { ($0.updatedAt) > ($1.updatedAt) }
             self.error = "Failed to delete conversation: \(error.localizedDescription)"
         }
     }
