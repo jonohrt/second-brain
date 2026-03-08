@@ -9,6 +9,7 @@ import { VaultService } from '../services/vault.js';
 import { healthRoutes } from './routes/health.js';
 import { captureRoutes } from './routes/capture.js';
 import { askRoutes } from './routes/ask.js';
+import { conversationRoutes } from './routes/conversations.js';
 import { authPlugin } from './plugins/auth.js';
 import { OllamaChatService } from '../services/ollama-chat.js';
 import { SearxngService } from '../services/searxng.js';
@@ -72,6 +73,9 @@ export function createApp(config: Config, opts?: CreateAppOptions): FastifyInsta
         intentRouter,
         conversations: conversationService,
       });
+
+      // Conversation endpoints
+      await scoped.register(conversationRoutes, { conversations: conversationService });
 
       // Register any protected routes passed via options
       if (opts?.protectedRoutes) {
