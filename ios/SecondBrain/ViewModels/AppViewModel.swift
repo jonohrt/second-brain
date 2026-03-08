@@ -51,6 +51,9 @@ class AppViewModel {
     /// Whether we're loading the conversation list
     var isLoadingConversations: Bool = false
 
+    /// Whether a reply arrived while the app was in the background (macOS only)
+    var hasUnreadReply: Bool = false
+
     // MARK: - Private
 
     private let apiClient: APIClient
@@ -170,6 +173,12 @@ class AppViewModel {
                     content: response.answer
                 )
                 messages.append(assistantMsg)
+
+                #if os(macOS)
+                if !NSApplication.shared.isActive {
+                    hasUnreadReply = true
+                }
+                #endif
 
                 if isTTSEnabled {
                     speechService.speak(response.answer)

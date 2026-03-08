@@ -1,9 +1,13 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var viewModel = AppViewModel()
+    @State private var viewModel: AppViewModel
     @FocusState private var isEditorFocused: Bool
     @State private var showConversationList = false
+
+    init(viewModel: AppViewModel = AppViewModel()) {
+        _viewModel = State(initialValue: viewModel)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
