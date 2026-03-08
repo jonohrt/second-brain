@@ -20,6 +20,8 @@
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>SecondBrain needs microphone access to record your voice for transcription.</string>
+    <key>UILaunchScreen</key>
+    <dict/>
     <key>NSAppTransportSecurity</key>
     <dict>
         <key>NSAllowsLocalNetworking</key>
