@@ -1,3 +1,4 @@
+#if os(iOS)
 import AVFoundation
 
 class AudioRecorder {
@@ -40,3 +41,4 @@ class AudioRecorder {
         return recordingURL
     }
 }
+#endif

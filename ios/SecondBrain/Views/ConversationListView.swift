@@ -49,6 +49,9 @@ struct ConversationListView: View {
                                         .foregroundColor(.secondary)
                                 }
                             }
+                            #if os(macOS)
+                            .buttonStyle(.plain)
+                            #endif
                         }
                         .onDelete { indexSet in
                             let toDelete = indexSet.map { viewModel.conversations[$0] }
@@ -61,7 +64,9 @@ struct ConversationListView: View {
                 }
             }
             .navigationTitle("Conversations")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }

@@ -1,6 +1,6 @@
 import type { ChatService, ChatMessage } from './ollama-chat.js';
 
-export type Intent = 'ask' | 'reminder' | 'capture_task' | 'update_task' | 'update_reminder' | 'capture_note' | 'list_tasks';
+export type Intent = 'ask' | 'reminder' | 'capture_task' | 'update_task' | 'update_reminder' | 'capture_note' | 'list_tasks' | 'send_message';
 
 export interface IntentResult {
   intent: Intent;
@@ -12,9 +12,11 @@ export interface IntentResult {
   new_description?: string;
   new_title?: string;
   reminder_time?: string;
+  recipient?: string;
+  message_body?: string;
 }
 
-const VALID_INTENTS: Intent[] = ['ask', 'reminder', 'capture_task', 'update_task', 'update_reminder', 'capture_note', 'list_tasks'];
+const VALID_INTENTS: Intent[] = ['ask', 'reminder', 'capture_task', 'update_task', 'update_reminder', 'capture_note', 'list_tasks', 'send_message'];
 
 // Regex patterns for intent detection — ordered by specificity (most specific first)
 const INTENT_PATTERNS: Array<{ intent: Intent; pattern: RegExp }> = [
@@ -23,6 +25,7 @@ const INTENT_PATTERNS: Array<{ intent: Intent; pattern: RegExp }> = [
   { intent: 'update_task', pattern: /\b(change|update|modify|edit)\b.*\b(task|todo|to-do)\b/i },
   { intent: 'capture_task', pattern: /\b(capture|add|create|make|new)\b.*\b(task|todo|to-do)\b/i },
   { intent: 'reminder', pattern: /\b(remind\s+me|set\s+a?\s*reminder|reminder\s+(for|to|at|on))\b/i },
+  { intent: 'send_message', pattern: /\b(send|text|imessage|message)\b.*\b(to|message)\b/i },
   { intent: 'capture_note', pattern: /\b(remember\s+that|save\s+(this|that|a\s+note)|note\s+that|don'?t\s+forget)\b/i },
 ];
 
@@ -33,6 +36,7 @@ For "reminder": extract title, reminder_time (ISO 8601 datetime)
 For "update_task": extract update_query (what task to find), new_description, new_title
 For "update_reminder": extract update_query (what reminder to find), new_title, reminder_time (ISO 8601)
 For "capture_note": extract title, content, tags
+For "send_message": extract recipient (phone number or contact name), message_body (the message text to send)
 
 Reply with JSON only. Only include fields that are clearly present in the message.
 Today's date is ${new Date().toISOString().slice(0, 10)}.`;
@@ -40,7 +44,29 @@ Today's date is ${new Date().toISOString().slice(0, 10)}.`;
 export class IntentRouter {
   constructor(private chatService: ChatService) {}
 
+  private extractMessageFallback(text: string): Partial<IntentResult> {
+    // "send (a) message/text to X saying/that Y"
+    const m1 = text.match(/\b(?:send|text|imessage)\s+(?:a\s+)?(?:message|text|imessage)\s+to\s+(.+?)\s+(?:saying|that|to say)\s+(.+)/i);
+    if (m1) return { recipient: m1[1].trim(), message_body: m1[2].trim() };
+
+    // "send (a) message/text to X<separator>Y" where separator is colon, comma, or period
+    const m2 = text.match(/\b(?:send|text|imessage)\s+(?:a\s+)?(?:message|text|imessage)\s+to\s+(.+?)[,:.]\s*(.+)/i);
+    if (m2) return { recipient: m2[1].trim(), message_body: m2[2].trim() };
+
+    // "text/message X saying/that Y" (no "to")
+    const m3 = text.match(/\b(?:text|message)\s+([A-Z][\w\s]+?)\s+(?:saying|that|to say)\s+(.+)/i);
+    if (m3) return { recipient: m3[1].trim(), message_body: m3[2].trim() };
+
+    // "send X a message saying Y"
+    const m4 = text.match(/\b(?:send)\s+(.+?)\s+(?:a\s+)?(?:message|text)\s+(?:saying|that|to say)\s+(.+)/i);
+    if (m4) return { recipient: m4[1].trim(), message_body: m4[2].trim() };
+
+    return {};
+  }
+
   private extractFallback(intent: Intent, text: string): Partial<IntentResult> {
+    if (intent === 'send_message') return this.extractMessageFallback(text);
+
     // Strip common prefixes to get the actual content
     const stripped = text
       .replace(/^(capture|add|create|make|new|set|remind\s+me|remember\s+that|save|note\s+that|update|change|modify|edit)\s+(a\s+)?(task|todo|to-do|reminder|note)\s+(to|for|about|that)?\s*/i, '')
@@ -70,6 +96,11 @@ export class IntentRouter {
       return { intent: detectedIntent };
     }
 
+    // For send_message, always use regex — LLM extraction is unreliable
+    if (detectedIntent === 'send_message') {
+      return { intent: detectedIntent, ...this.extractMessageFallback(text) };
+    }
+
     // Use LLM only for field extraction (not classification)
     try {
       const messages: ChatMessage[] = [
@@ -92,10 +123,19 @@ export class IntentRouter {
       const result = await this.chatService.chatWithFallback(messages, 'json');
       const parsed = JSON.parse(result.content);
 
-      // If LLM didn't extract a title, use regex fallback
-      if (!parsed.title) {
+      // For send_message, check recipient instead of title
+      const hasRequiredFields = detectedIntent === 'send_message'
+        ? !!parsed.recipient
+        : !!parsed.title;
+
+      if (!hasRequiredFields) {
         const fallback = this.extractFallback(detectedIntent, text);
-        return { intent: detectedIntent, ...fallback, ...parsed, title: parsed.title || fallback.title };
+        // Fallback wins over empty/null LLM fields
+        const merged = { ...parsed };
+        for (const [k, v] of Object.entries(fallback)) {
+          if (v && !merged[k]) merged[k] = v;
+        }
+        return { intent: detectedIntent, ...merged };
       }
 
       return { intent: detectedIntent, ...parsed };

@@ -1,3 +1,4 @@
+#if os(iOS)
 import Foundation
 import WhisperKit
 
@@ -41,3 +42,4 @@ enum TranscriptionError: Error, LocalizedError {
         }
     }
 }
+#endif

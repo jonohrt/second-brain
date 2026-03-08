@@ -42,6 +42,7 @@ struct ContentView: View {
             .padding(.top, 8)
             .padding(.bottom, 4)
 
+            #if os(iOS)
             // Setup message (WhisperKit model download)
             if let setupMessage = viewModel.setupMessage {
                 HStack(spacing: 8) {
@@ -52,12 +53,17 @@ struct ContentView: View {
                 }
                 .padding(.vertical, 8)
             }
+            #endif
 
             // Chat messages area
             ScrollViewReader { proxy in
                 ScrollView {
                     if viewModel.messages.isEmpty && !viewModel.isLoading {
+                        #if os(iOS)
                         Text("Ask a question or record a voice note")
+                        #else
+                        Text("Ask a question")
+                        #endif
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity)
                             .padding(.top, 80)
@@ -89,7 +95,9 @@ struct ContentView: View {
                         .padding(.vertical, 8)
                     }
                 }
+                #if os(iOS)
                 .scrollDismissesKeyboard(.interactively)
+                #endif
                 .onChange(of: viewModel.messages.count) {
                     if let lastId = viewModel.messages.last?.id {
                         withAnimation {
@@ -106,7 +114,11 @@ struct ContentView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            #if os(iOS)
             .background(Color(.systemGray6))
+            #else
+            .background(Color(nsColor: .controlBackgroundColor))
+            #endif
 
             // Error area
             if let errorMessage = viewModel.error {
@@ -127,17 +139,20 @@ struct ContentView: View {
                 .padding(.vertical, 8)
             }
 
+            #if os(iOS)
             // Transcribing indicator
             if viewModel.isTranscribing {
                 ProgressView("Transcribing...")
                     .padding(.vertical, 8)
             }
+            #endif
 
             Divider()
                 .padding(.top, 8)
 
             // Input area
             HStack(alignment: .bottom, spacing: 12) {
+                #if os(iOS)
                 RecordButton(
                     isRecording: viewModel.isRecording,
                     isDisabled: !viewModel.isWhisperReady,
@@ -145,15 +160,19 @@ struct ContentView: View {
                     onStop: { viewModel.stopRecording() }
                 )
                 .frame(width: 56, height: 56)
+                #endif
 
                 VStack(spacing: 6) {
                     ZStack(alignment: .topLeading) {
                         TextEditor(text: $viewModel.transcription)
                             .focused($isEditorFocused)
                             .frame(minHeight: 40, maxHeight: 80)
+                            #if os(macOS)
+                            .font(.body)
+                            #endif
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
+                                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
                             )
                             .overlay(alignment: .topTrailing) {
                                 if !viewModel.transcription.isEmpty {
@@ -163,12 +182,13 @@ struct ContentView: View {
                                         Image(systemName: "xmark.circle.fill")
                                             .foregroundColor(.secondary)
                                     }
+                                    .buttonStyle(.plain)
                                     .padding(8)
                                 }
                             }
                         if viewModel.transcription.isEmpty {
                             Text("Ask anything...")
-                                .foregroundColor(Color(.placeholderText))
+                                .foregroundColor(.secondary)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 12)
                                 .allowsHitTesting(false)
@@ -197,20 +217,30 @@ struct ContentView: View {
                             viewModel.transcription
                                 .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                         )
+                        #if os(macOS)
+                        .keyboardShortcut(.return, modifiers: .command)
+                        #endif
                     }
                 }
             }
             .padding(.horizontal)
             .padding(.vertical, 12)
         }
+        #if os(iOS)
         .onTapGesture {
             isEditorFocused = false
         }
+        #endif
         .sheet(isPresented: $showConversationList) {
             ConversationListView(viewModel: viewModel)
+            #if os(macOS)
+                .frame(minWidth: 300, minHeight: 400)
+            #endif
         }
+        #if os(iOS)
         .task {
             await viewModel.initializeWhisper()
         }
+        #endif
     }
 }

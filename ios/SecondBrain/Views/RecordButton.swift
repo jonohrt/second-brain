@@ -1,3 +1,4 @@
+#if os(iOS)
 import SwiftUI
 
 struct RecordButton: View {
@@ -32,3 +33,4 @@ struct RecordButton: View {
             .opacity(isDisabled ? 0.4 : 1.0)
     }
 }
+#endif

@@ -6,7 +6,7 @@ import type { IntentRouter } from '../../services/intent-router.js';
 import type { ConversationService } from '../../services/conversation.js';
 import type { ContextEntry } from '../../types.js';
 import { captureEntry } from '../../services/capture.js';
-import { createAppleReminder, updateAppleReminder } from '../../services/reminders.js';
+import { createAppleReminder, updateAppleReminder, sendIMessage } from '../../services/reminders.js';
 
 const askBodySchema = z.object({
   text: z.string().min(1, 'text is required'),
@@ -162,6 +162,23 @@ export async function askRoutes(
             answer = `You have ${tasks.length} open task${tasks.length === 1 ? '' : 's'}:\n\n${lines.join('\n')}`;
           }
           route = 'list_tasks';
+          break;
+        }
+
+        case 'send_message': {
+          if (!intent.recipient) {
+            answer = 'Who should I send the message to? Please include a name or phone number.';
+            break;
+          }
+          if (!intent.message_body) {
+            answer = `What would you like to say to ${intent.recipient}?`;
+            break;
+          }
+          const sendErr = await sendIMessage(intent.recipient, intent.message_body);
+          answer = sendErr
+            ? `⚠️ ${sendErr}`
+            : `Message sent to ${intent.recipient}: "${intent.message_body}"`;
+          route = 'send_message';
           break;
         }
 

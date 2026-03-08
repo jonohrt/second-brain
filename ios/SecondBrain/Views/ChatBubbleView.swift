@@ -21,7 +21,11 @@ struct ChatBubbleView: View {
                 Text(displayContent)
                     .textSelection(.enabled)
                     .padding(12)
+                    #if os(iOS)
                     .background(isUser ? Color.blue : Color(.systemGray5))
+                    #else
+                    .background(isUser ? Color.blue : Color(nsColor: .controlBackgroundColor))
+                    #endif
                     .foregroundColor(isUser ? .white : .primary)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 

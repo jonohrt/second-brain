@@ -57,6 +57,69 @@ end tell`;
   }
 }
 
+async function resolveContact(name: string): Promise<string | null> {
+  const escapedName = name.replace(/"/g, '\\"');
+  // Search Contacts.app for a phone number matching the name
+  const script = `tell application "Contacts"
+  set matchedPeople to (every person whose name contains "${escapedName}")
+  if (count of matchedPeople) > 0 then
+    set p to item 1 of matchedPeople
+    set phoneNumbers to value of every phone of p
+    if (count of phoneNumbers) > 0 then
+      return item 1 of phoneNumbers
+    end if
+    -- fall back to email
+    set emails to value of every email of p
+    if (count of emails) > 0 then
+      return item 1 of emails
+    end if
+  end if
+  return ""
+end tell`;
+
+  try {
+    const { stdout } = await execFileAsync('osascript', ['-e', script], { timeout: 10000 });
+    const result = stdout.trim();
+    return result || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function sendIMessage(
+  to: string,
+  message: string,
+): Promise<string | null> {
+  const escapedMsg = message.replace(/"/g, '\\"');
+
+  // If "to" looks like a phone number or email, use directly; otherwise resolve via Contacts
+  const isDirect = /^[+\d()\s-]{7,}$/.test(to) || to.includes('@');
+  let address = to;
+
+  if (!isDirect) {
+    const resolved = await resolveContact(to);
+    if (!resolved) {
+      return `Could not find a contact named "${to}". Try using their phone number instead.`;
+    }
+    address = resolved;
+  }
+
+  const escapedAddr = address.replace(/"/g, '\\"');
+  const script = `tell application "Messages"
+  set targetService to 1st service whose service type = iMessage
+  set targetBuddy to buddy "${escapedAddr}" of targetService
+  send "${escapedMsg}" to targetBuddy
+end tell`;
+
+  try {
+    await execFileAsync('osascript', ['-e', script], { timeout: 15000 });
+    return null;
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    return `iMessage failed: ${msg}`;
+  }
+}
+
 export async function updateAppleReminder(
   currentTitle: string,
   updates: { newTitle?: string; newDate?: Date },

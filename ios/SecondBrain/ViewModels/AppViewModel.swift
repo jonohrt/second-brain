@@ -54,13 +54,16 @@ class AppViewModel {
     // MARK: - Private
 
     private let apiClient: APIClient
+    #if os(iOS)
     private let recorder: AudioRecorder
     private let transcriber: TranscriptionService
+    #endif
     private let speechService = SpeechService()
     private var currentRequestTask: Task<Void, Never>?
 
     // MARK: - Init
 
+    #if os(iOS)
     init(
         apiClient: APIClient = APIClient(),
         recorder: AudioRecorder = AudioRecorder(),
@@ -70,10 +73,16 @@ class AppViewModel {
         self.recorder = recorder
         self.transcriber = transcriber
     }
+    #else
+    init(apiClient: APIClient = APIClient()) {
+        self.apiClient = apiClient
+    }
+    #endif
 
     // MARK: - WhisperKit Initialization
 
     func initializeWhisper() async {
+        #if os(iOS)
         setupMessage = "Loading speech model..."
         do {
             try await transcriber.initialize()
@@ -83,11 +92,16 @@ class AppViewModel {
             setupMessage = nil
             self.error = "Voice unavailable: \(error.localizedDescription)"
         }
+        #else
+        // No voice on macOS
+        isWhisperReady = false
+        #endif
     }
 
     // MARK: - Recording
 
     func startRecording() {
+        #if os(iOS)
         speechService.stop()
         guard isWhisperReady, !isRecording else { return }
         error = nil
@@ -97,9 +111,11 @@ class AppViewModel {
         } catch {
             self.error = "Failed to start recording: \(error.localizedDescription)"
         }
+        #endif
     }
 
     func stopRecording() {
+        #if os(iOS)
         guard isRecording else { return }
         isRecording = false
         guard let url = recorder.stopRecording() else { return }
@@ -112,6 +128,7 @@ class AppViewModel {
             }
             isTranscribing = false
         }
+        #endif
     }
 
     // MARK: - API
