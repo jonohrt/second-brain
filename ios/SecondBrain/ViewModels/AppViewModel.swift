@@ -138,11 +138,14 @@ class AppViewModel {
     // MARK: - TTS
 
     /// Toggles text-to-speech readback on/off.
+    /// If speech is currently playing, stops it without changing the TTS preference.
     func toggleTTS() {
-        isTTSEnabled.toggle()
-        if !isTTSEnabled && speechService.isSpeaking {
+        if speechService.isSpeaking {
             speechService.stop()
-        } else if isTTSEnabled && !answer.isEmpty {
+            return
+        }
+        isTTSEnabled.toggle()
+        if isTTSEnabled && !answer.isEmpty {
             speechService.speak(answer)
         }
     }
