@@ -69,6 +69,33 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.top, 80)
                     } else {
+                        #if os(macOS)
+                        VStack(spacing: 8) {
+                            ForEach(viewModel.messages) { message in
+                                ChatBubbleView(
+                                    message: message,
+                                    sources: message.role == "assistant" && message.id == viewModel.messages.last(where: { $0.role == "assistant" })?.id
+                                        ? viewModel.vaultSources
+                                        : []
+                                )
+                                .id(message.id)
+                            }
+
+                            if viewModel.isLoading {
+                                HStack {
+                                    ProgressView()
+                                    Text("Thinking...")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                }
+                                .padding(.horizontal)
+                                .id("loading")
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                        #else
                         LazyVStack(spacing: 8) {
                             ForEach(viewModel.messages) { message in
                                 ChatBubbleView(
@@ -94,22 +121,29 @@ struct ContentView: View {
                         }
                         .padding(.horizontal)
                         .padding(.vertical, 8)
+                        #endif
                     }
                 }
                 #if os(iOS)
                 .scrollDismissesKeyboard(.interactively)
                 #endif
                 .onChange(of: viewModel.messages.count) {
-                    if let lastId = viewModel.messages.last?.id {
-                        withAnimation {
-                            proxy.scrollTo(lastId, anchor: .bottom)
+                    guard let last = viewModel.messages.last else { return }
+                    // User message → scroll it into view at bottom
+                    // Assistant message → scroll its top to the top of the visible area
+                    let anchor: UnitPoint = last.role == "user" ? .bottom : .top
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        withAnimation(.easeOut(duration: 0.25)) {
+                            proxy.scrollTo(last.id, anchor: anchor)
                         }
                     }
                 }
                 .onChange(of: viewModel.isLoading) {
                     if viewModel.isLoading {
-                        withAnimation {
-                            proxy.scrollTo("loading", anchor: .bottom)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            withAnimation(.easeOut(duration: 0.25)) {
+                                proxy.scrollTo("loading", anchor: .bottom)
+                            }
                         }
                     }
                 }
