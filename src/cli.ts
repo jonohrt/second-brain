@@ -93,8 +93,8 @@ program
     const embeddings = new EmbeddingsService(config.ollama.baseUrl, config.ollama.model);
     const supabase = new SupabaseService(config.supabase.url, config.supabase.key);
 
-    const entries = vault.listEntries();
-    console.log(`Found ${entries.length} vault entries. Syncing...`);
+    const entries = vault.listAllEntries();
+    console.log(`Found ${entries.length} vault entries (full vault). Syncing...`);
 
     let synced = 0;
     for (const entry of entries) {

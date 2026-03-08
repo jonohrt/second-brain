@@ -122,17 +122,26 @@ export class VaultService {
       content.match(/^#\s+(.+)$/m)?.[1] ??
       'Untitled';
 
+    // Determine type — fall back to 'learned' for personal/general files
+    const type = (data.type as ContextType) ?? 'learned';
+
+    // Parse dates flexibly — support 'created', 'date', or fall back to now
+    const createdRaw = data.created ?? data.date;
+    const updatedRaw = data.updated ?? data.modified ?? data.created ?? data.date;
+    const createdAt = createdRaw ? new Date(createdRaw as string) : new Date();
+    const updatedAt = updatedRaw ? new Date(updatedRaw as string) : new Date();
+
     return {
-      type: data.type as ContextType,
+      type,
       project: data.project as string | undefined,
       repo: data.repo as string | undefined,
       branch: data.branch as string | undefined,
       prNumber: data.pr as number | undefined,
       title,
       content: content.trim(),
-      metadata: { tags: data.tags ?? [] },
-      createdAt: new Date(data.created as string),
-      updatedAt: new Date(data.updated as string),
+      metadata: { tags: data.tags ?? [], ...(data.space ? { space: data.space } : {}) },
+      createdAt,
+      updatedAt,
       vaultPath: filePath,
     };
   }
@@ -147,6 +156,13 @@ export class VaultService {
     return entries;
   }
 
+  /** List all markdown files across the entire vault (not just contextDir). */
+  listAllEntries(): ContextEntry[] {
+    const entries: ContextEntry[] = [];
+    this.walkDir(this.vaultPath, entries);
+    return entries;
+  }
+
   private walkDir(dir: string, entries: ContextEntry[]): void {
     let items;
     try {
@@ -157,7 +173,8 @@ export class VaultService {
 
     for (const item of items) {
       const fullPath = join(dir, item.name);
-      if (item.isDirectory()) {
+      // Skip hidden dirs (.obsidian) and Templates
+      if (item.isDirectory() && !item.name.startsWith('.') && item.name !== 'Templates') {
         this.walkDir(fullPath, entries);
       } else if (item.isFile() && item.name.endsWith('.md')) {
         try {
