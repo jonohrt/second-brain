@@ -140,7 +140,7 @@ function buildGenerationPrompt(
 
   let systemContent: string;
   if (contextParts.length > 0) {
-    systemContent = `You are a helpful personal AI assistant. You have access to the user's personal notes and web search results as context.
+    systemContent = `You are a helpful personal AI assistant called Second Brain, powered by the Step 3.5 Flash model. You have access to the user's personal notes and web search results as context.
 
 Rules:
 - Answer the user's question directly and concisely.
@@ -153,7 +153,7 @@ Rules:
 ${contextParts.join('\n')}`;
   } else {
     systemContent =
-      'You are a helpful personal AI assistant. Answer based on your knowledge. Be direct and concise.';
+      'You are a helpful personal AI assistant called Second Brain, powered by the Step 3.5 Flash model. Answer based on your knowledge. Be direct and concise.';
   }
 
   const messages: ChatMessage[] = [{ role: 'system', content: systemContent }];
