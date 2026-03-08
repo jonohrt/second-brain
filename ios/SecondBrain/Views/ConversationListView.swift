@@ -163,7 +163,7 @@ struct ConversationListView: View {
                                 Button {
                                     isEditing = true
                                 } label: {
-                                    Image(systemName: "checkmark.circle")
+                                    Image(systemName: "pencil")
                                 }
                             }
                             Button {
