@@ -1,5 +1,20 @@
 import SwiftUI
 
+private func relativeTime(_ date: Date) -> String {
+    let seconds = Int(-date.timeIntervalSinceNow)
+    if seconds < 60 { return "Just now" }
+    let minutes = seconds / 60
+    if minutes < 60 { return "\(minutes)m ago" }
+    let hours = minutes / 60
+    if hours < 24 { return "\(hours)h ago" }
+    let days = hours / 24
+    if days < 7 { return "\(days)d ago" }
+    let formatter = DateFormatter()
+    formatter.dateStyle = .medium
+    formatter.timeStyle = .none
+    return formatter.string(from: date)
+}
+
 struct ConversationListView: View {
     @Bindable var viewModel: AppViewModel
     @Environment(\.dismiss) private var dismiss
@@ -29,7 +44,7 @@ struct ConversationListView: View {
                                         .font(.body)
                                         .foregroundColor(.primary)
                                         .lineLimit(1)
-                                    Text(conversation.updatedAt, style: .relative)
+                                    Text(relativeTime(conversation.updatedAt))
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }

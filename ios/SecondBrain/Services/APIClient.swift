@@ -52,7 +52,17 @@ struct APIClient {
     }
 
     func deleteConversation(id: String) async throws {
-        let _: [String: Bool] = try await performGet(path: "/conversations/\(id)", method: "DELETE")
+        let url = URL(string: "/conversations/\(id)", relativeTo: baseURL)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(apiToken)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = AppConfig.requestTimeout
+
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.requestFailed(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0, message: "Delete failed")
+        }
     }
 
     // MARK: - Private
