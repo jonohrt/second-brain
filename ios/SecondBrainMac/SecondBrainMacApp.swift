@@ -49,17 +49,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func observeBadge() {
         guard let viewModel else { return }
-        func track() {
-            withObservationTracking {
-                let badge = viewModel.hasUnreadReply
-                DispatchQueue.main.async { [weak self] in
-                    self?.updateIcon(badge: badge)
+        @Sendable func track() {
+            MainActor.assumeIsolated {
+                withObservationTracking {
+                    let badge = viewModel.hasUnreadReply
+                    updateIcon(badge: badge)
+                } onChange: {
+                    DispatchQueue.main.async { track() }
                 }
-            } onChange: {
-                DispatchQueue.main.async { track() }
             }
         }
-        track()
+        DispatchQueue.main.async { track() }
     }
 
     private func updateIcon(badge: Bool) {
