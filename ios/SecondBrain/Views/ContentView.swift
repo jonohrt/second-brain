@@ -39,8 +39,8 @@ struct ContentView: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.top, 8)
             .padding(.bottom, 4)
+            .safeAreaPadding(.top)
 
             // Setup message (WhisperKit model download)
             if let setupMessage = viewModel.setupMessage {
@@ -200,8 +200,12 @@ struct ContentView: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.vertical, 12)
+            .padding(.top, 12)
+            .padding(.bottom, 4)
+            .safeAreaPadding(.bottom)
         }
+        .background(Color(.systemBackground))
+        .ignoresSafeArea(edges: [.top, .bottom])
         .onTapGesture {
             isEditorFocused = false
         }
