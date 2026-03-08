@@ -152,12 +152,13 @@ Rules:
 - NEVER include URLs or links in your response. Sources are tracked separately.
 - Do NOT list or summarize search results. Synthesize the information into a natural answer.
 - When referencing personal notes, mention the note title naturally.
+- You CANNOT set reminders, send messages, or create tasks. If the user asks you to do these things, tell them to phrase it as a command (e.g. "remind me to..." or "set a reminder for...").
 
 ${contextParts.join('\n')}`;
   } else {
     const identity2 = modelName ? ` powered by ${modelName}` : '';
     systemContent =
-      `You are a helpful personal AI assistant called Second Brain${identity2}. Answer based on your knowledge. Be direct and concise.`;
+      `You are a helpful personal AI assistant called Second Brain${identity2}. Answer based on your knowledge. Be direct and concise. You CANNOT set reminders, send messages, or create tasks. If the user asks you to do these things, tell them to phrase it as a command (e.g. "remind me to..." or "set a reminder for...").`;
   }
 
   const messages: ChatMessage[] = [{ role: 'system', content: systemContent }];

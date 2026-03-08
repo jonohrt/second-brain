@@ -24,7 +24,7 @@ const INTENT_PATTERNS: Array<{ intent: Intent; pattern: RegExp }> = [
   { intent: 'update_reminder', pattern: /\b(change|update|modify|reschedule|move|push)\b.*\b(reminder|alarm|alert)\b/i },
   { intent: 'update_task', pattern: /\b(change|update|modify|edit)\b.*\b(task|todo|to-do)\b/i },
   { intent: 'capture_task', pattern: /\b(capture|add|create|make|new)\b.*\b(task|todo|to-do)\b/i },
-  { intent: 'reminder', pattern: /\b(remind\s+me|set\s+a?\s*reminder|reminder\s+(for|to|at|on))\b/i },
+  { intent: 'reminder', pattern: /\b(remind\s+me|set\s+(up\s+)?a?\s*reminder|(?:add|create|make)\s+(?:a\s+)?reminder|reminder\s+(for|to|at|on))\b/i },
   { intent: 'send_message', pattern: /\b(send|text|imessage|message)\b.*\b(to|message)\b/i },
   { intent: 'capture_note', pattern: /\b(remember\s+that|save\s+(this|that|a\s+note)|note\s+that|don'?t\s+forget)\b/i },
 ];

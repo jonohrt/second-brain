@@ -5,7 +5,7 @@ struct ContentView: View {
     @FocusState private var isEditorFocused: Bool
     @State private var showConversationList = false
 
-    init(viewModel: AppViewModel = AppViewModel()) {
+    @MainActor init(viewModel: AppViewModel = AppViewModel()) {
         _viewModel = State(initialValue: viewModel)
     }
 

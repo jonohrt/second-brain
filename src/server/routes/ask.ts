@@ -58,6 +58,7 @@ export async function askRoutes(
 
     // Classify intent
     const intent = await intentRouter.classify(text, history);
+    console.log('[ask] intent:', JSON.stringify(intent));
 
     let answer: string;
     let sources: unknown[] = [];
@@ -76,7 +77,9 @@ export async function askRoutes(
         }
 
         case 'reminder': {
-          const reminderDate = intent.reminder_time ? new Date(intent.reminder_time) : new Date();
+          const rawDate = intent.reminder_time ? new Date(intent.reminder_time) : null;
+          const reminderDate = rawDate && !isNaN(rawDate.getTime()) ? rawDate : new Date(Date.now() + 60_000);
+          console.log('[reminder] title:', intent.title, 'raw_time:', intent.reminder_time, 'parsed:', reminderDate.toISOString());
           const warning = await createAppleReminder(intent.title ?? text, reminderDate);
           const timeStr = reminderDate.toLocaleString('en-US', {
             weekday: 'short', month: 'short', day: 'numeric',

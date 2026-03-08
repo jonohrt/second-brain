@@ -6,10 +6,11 @@ const execFileAsync = promisify(execFile);
 export async function findAppleReminder(title: string): Promise<boolean> {
   const escapedTitle = title.replace(/"/g, '\\"');
   const script = `tell application "Reminders"
-  tell list "Reminders"
-    set matches to (every reminder whose name contains "${escapedTitle}" and completed is false)
-    return (count of matches) > 0
-  end tell
+  set matches to {}
+  repeat with l in every list
+    set matches to matches & (every reminder of l whose name is "${escapedTitle}" and completed is false)
+  end repeat
+  return (count of matches) > 0
 end tell`;
 
   try {
@@ -24,6 +25,7 @@ export async function createAppleReminder(title: string, remindAt: Date): Promis
   // Check for existing reminder with same name to avoid duplicates
   const exists = await findAppleReminder(title);
   if (exists) {
+    console.log('[reminder] duplicate found, skipping:', title);
     return `Reminder "${title}" already exists, skipping.`;
   }
 
@@ -43,16 +45,20 @@ export async function createAppleReminder(title: string, remindAt: Date): Promis
   const escapedTitle = title.replace(/"/g, '\\"');
 
   const script = `tell application "Reminders"
-  tell list "Reminders"
+  set defaultList to default list
+  tell defaultList
     make new reminder with properties {name:"${escapedTitle}", remind me date:date "${appleDate}"}
   end tell
 end tell`;
 
+  console.log('[reminder] creating:', title, 'date:', appleDate);
   try {
     await execFileAsync('osascript', ['-e', script]);
+    console.log('[reminder] created successfully:', title);
     return null;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    console.error('[reminder] creation failed:', message);
     return `Reminder creation failed: ${message}`;
   }
 }
