@@ -39,7 +39,8 @@ Reply with JSON only:
   "reminder_time": "ISO 8601 datetime string (for reminder intents)"
 }
 
-Only include fields relevant to the intent. For "ask" intent, return just {"intent": "ask"}.`;
+Only include fields relevant to the intent. For "ask" intent, return just {"intent": "ask"}.
+Today's date is ${new Date().toISOString().slice(0, 10)}.`;
 
 export class IntentRouter {
   constructor(private ollamaChat: OllamaChatService) {}

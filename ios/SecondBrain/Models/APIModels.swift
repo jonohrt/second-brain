@@ -48,9 +48,7 @@ struct ConversationSummary: Decodable, Identifiable {
     let updatedAt: Date
 
     enum CodingKeys: String, CodingKey {
-        case id, title
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
+        case id, title, createdAt, updatedAt
     }
 
     init(from decoder: Decoder) throws {
@@ -79,9 +77,7 @@ struct ChatMessage: Decodable, Identifiable, Equatable {
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
-        case id, role, content, metadata
-        case conversationId = "conversation_id"
-        case createdAt = "created_at"
+        case id, role, content, metadata, conversationId, createdAt
     }
 
     init(from decoder: Decoder) throws {

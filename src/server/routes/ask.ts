@@ -174,8 +174,13 @@ export async function askRoutes(
       return reply.status(500).send({ error: 'Ask failed', message });
     }
 
-    // Store assistant response
-    await conversations.addMessage(conversationId, 'assistant', answer);
+    // Store assistant response with metadata
+    await conversations.addMessage(conversationId, 'assistant', answer, {
+      route,
+      model,
+      sources,
+      intent: intent.intent,
+    });
 
     return reply.send({
       answer,
