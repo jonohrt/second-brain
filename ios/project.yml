@@ -27,6 +27,7 @@ targets:
     info:
       path: Generated/Info.plist
       properties:
+        UILaunchScreen: {}
         NSMicrophoneUsageDescription: "SecondBrain needs microphone access to record your voice for transcription."
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
