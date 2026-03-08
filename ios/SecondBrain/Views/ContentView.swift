@@ -93,7 +93,7 @@ struct ContentView: View {
                         .foregroundColor(.red)
                     Spacer()
                     Button("Retry") {
-                        Task { await viewModel.retry() }
+                        viewModel.retry()
                     }
                     .buttonStyle(.bordered)
                     .tint(.red)
@@ -128,7 +128,7 @@ struct ContentView: View {
                 )
                 .frame(width: 56, height: 56)
 
-                // Text input + send
+                // Text input + send/stop
                 VStack(spacing: 6) {
                     ZStack(alignment: .topLeading) {
                         TextEditor(text: $viewModel.transcription)
@@ -138,6 +138,17 @@ struct ContentView: View {
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(Color(.systemGray4), lineWidth: 1)
                             )
+                            .overlay(alignment: .topTrailing) {
+                                if !viewModel.transcription.isEmpty {
+                                    Button {
+                                        viewModel.transcription = ""
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(8)
+                                }
+                            }
                         if viewModel.transcription.isEmpty {
                             Text("Ask anything...")
                                 .foregroundColor(Color(.placeholderText))
@@ -147,19 +158,29 @@ struct ContentView: View {
                         }
                     }
 
-                    Button {
-                        isEditorFocused = false
-                        Task { await viewModel.sendQuestion() }
-                    } label: {
-                        Text("Send")
-                            .frame(maxWidth: .infinity)
+                    if viewModel.isLoading {
+                        Button {
+                            viewModel.cancelRequest()
+                        } label: {
+                            Label("Stop", systemImage: "stop.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                    } else {
+                        Button {
+                            isEditorFocused = false
+                            viewModel.sendQuestion()
+                        } label: {
+                            Text("Send")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(
+                            viewModel.transcription
+                                .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        )
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(
-                        viewModel.transcription
-                            .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        || viewModel.isLoading
-                    )
                 }
             }
             .padding(.horizontal)

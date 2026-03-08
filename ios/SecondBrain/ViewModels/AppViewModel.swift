@@ -48,6 +48,7 @@ class AppViewModel {
     private let recorder: AudioRecorder
     private let transcriber: TranscriptionService
     private let speechService = SpeechService()
+    private var currentRequestTask: Task<Void, Never>?
 
     // MARK: - Init
 
@@ -111,28 +112,40 @@ class AppViewModel {
     // MARK: - API
 
     /// Sends the current transcription to the /ask endpoint and populates the answer.
-    func sendQuestion() async {
+    func sendQuestion() {
         let trimmed = transcription.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         isLoading = true
         error = nil
         speechService.stop()
-        do {
-            let response = try await apiClient.ask(text: trimmed)
-            answer = response.answer
-            currentSources = response.sources ?? []
-            if isTTSEnabled {
-                speechService.speak(response.answer)
+
+        currentRequestTask = Task {
+            do {
+                let response = try await apiClient.ask(text: trimmed)
+                guard !Task.isCancelled else { return }
+                answer = response.answer
+                currentSources = response.sources ?? []
+                if isTTSEnabled {
+                    speechService.speak(response.answer)
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.error = error.localizedDescription
             }
-        } catch {
-            self.error = error.localizedDescription
+            isLoading = false
         }
+    }
+
+    /// Cancels the current in-flight request.
+    func cancelRequest() {
+        currentRequestTask?.cancel()
+        currentRequestTask = nil
         isLoading = false
     }
 
     /// Retries the last question.
-    func retry() async {
-        await sendQuestion()
+    func retry() {
+        sendQuestion()
     }
 
     // MARK: - TTS
