@@ -4,9 +4,10 @@ import type { AskPipeline } from '../../services/ask-pipeline.js';
 import type { Services } from '../../mcp/server.js';
 import type { IntentRouter } from '../../services/intent-router.js';
 import type { ConversationService } from '../../services/conversation.js';
+import type { ChatService } from '../../services/ollama-chat.js';
 import type { ContextEntry } from '../../types.js';
 import { captureEntry } from '../../services/capture.js';
-import { createAppleReminder, updateAppleReminder, sendIMessage } from '../../services/reminders.js';
+import { createAppleReminder, updateAppleReminder, deleteAppleReminder, listAppleReminders, sendIMessage } from '../../services/reminders.js';
 
 const askBodySchema = z.object({
   text: z.string().min(1, 'text is required'),
@@ -18,13 +19,14 @@ export interface AskRouteDeps {
   services: Services;
   intentRouter: IntentRouter;
   conversations: ConversationService;
+  chatService: ChatService;
 }
 
 export async function askRoutes(
   app: FastifyInstance,
   opts: AskRouteDeps,
 ) {
-  const { askPipeline, services, intentRouter, conversations } = opts;
+  const { askPipeline, services, intentRouter, conversations, chatService } = opts;
 
   app.post('/ask', async (request, reply) => {
     const parsed = askBodySchema.safeParse(request.body);
@@ -153,6 +155,35 @@ export async function askRoutes(
           break;
         }
 
+        case 'delete_task': {
+          const deleteQuery = intent.update_query ?? intent.title ?? text;
+          const taskMatches = await services.supabase.findTaskByTitle(deleteQuery);
+          if (taskMatches.length === 0) {
+            answer = `No task found matching "${deleteQuery}".`;
+            break;
+          }
+          if (taskMatches.length > 1) {
+            const list = taskMatches.map((t) => `- ${t.title}`).join('\n');
+            answer = `Multiple tasks match "${deleteQuery}". Be more specific:\n${list}`;
+            break;
+          }
+          const taskToDelete = taskMatches[0];
+
+          // Delete vault file if it exists
+          if (taskToDelete.vaultPath) {
+            services.vault.deleteEntry(taskToDelete.vaultPath);
+          }
+
+          // Delete from Supabase
+          if (taskToDelete.id) {
+            await services.supabase.deleteTask(taskToDelete.id);
+          }
+
+          answer = `Deleted task: "${taskToDelete.title}"`;
+          route = 'delete_task';
+          break;
+        }
+
         case 'list_tasks': {
           const tasks = await services.supabase.getTasksByStatus('open', { limit: 20 });
           if (tasks.length === 0) {
@@ -177,7 +208,7 @@ export async function askRoutes(
             answer = `What would you like to say to ${intent.recipient}?`;
             break;
           }
-          const sendErr = await sendIMessage(intent.recipient, intent.message_body);
+          const sendErr = await sendIMessage(intent.recipient, intent.message_body, chatService);
           answer = sendErr
             ? `⚠️ ${sendErr}`
             : `Message sent to ${intent.recipient}: "${intent.message_body}"`;
@@ -201,6 +232,131 @@ export async function askRoutes(
           break;
         }
 
+        case 'delete_reminder': {
+          const deleteQuery = intent.update_query ?? intent.title ?? text;
+          const deleteResult = await deleteAppleReminder(deleteQuery);
+          answer = deleteResult
+            ? `⚠️ ${deleteResult}`
+            : `Deleted reminder: "${deleteQuery}"`;
+          route = 'delete_reminder';
+          break;
+        }
+
+        case 'list_reminders': {
+          const reminders = await listAppleReminders(intent.list_name);
+          if (reminders.length === 0) {
+            answer = intent.list_name
+              ? `No reminders found in "${intent.list_name}".`
+              : 'No uncompleted reminders found.';
+          } else {
+            const lines = reminders.map((r, i) => {
+              const date = r.remindDate ? ` — ${r.remindDate}` : '';
+              const list = r.list ? ` [${r.list}]` : '';
+              return `${i + 1}. ${r.title}${date}${list}`;
+            });
+            answer = `You have ${reminders.length} reminder${reminders.length === 1 ? '' : 's'}:\n\n${lines.join('\n')}`;
+          }
+          route = 'list_reminders';
+          break;
+        }
+
+        case 'edit_note': {
+          const editQuery = intent.update_query ?? intent.title ?? text;
+          const noteMatches = await services.supabase.findEntriesByQuery(editQuery, 'learned');
+          if (noteMatches.length === 0) {
+            answer = `No note found matching "${editQuery}".`;
+            break;
+          }
+          if (noteMatches.length > 1) {
+            const list = noteMatches.slice(0, 5).map((n) => `- ${n.title}`).join('\n');
+            answer = `Multiple notes match "${editQuery}". Be more specific:\n${list}`;
+            break;
+          }
+          const noteToEdit = noteMatches[0];
+          if (intent.new_title) noteToEdit.title = intent.new_title;
+          if (intent.new_description) noteToEdit.content = intent.new_description;
+          if (intent.content) noteToEdit.content = intent.content;
+          noteToEdit.updatedAt = new Date();
+
+          // Re-write vault file
+          const editVaultPath = services.vault.writeEntry(noteToEdit);
+          noteToEdit.vaultPath = editVaultPath;
+
+          // Re-embed and sync
+          const editAvailable = await services.embeddings.isAvailable();
+          if (editAvailable) {
+            const embedding = await services.embeddings.embed(noteToEdit.content);
+            await services.supabase.upsertEntry(noteToEdit, embedding);
+          } else {
+            await services.supabase.upsertEntry(noteToEdit);
+          }
+          answer = `Updated note: "${noteToEdit.title}"`;
+          route = 'edit_note';
+          break;
+        }
+
+        case 'delete_note': {
+          const deleteNoteQuery = intent.update_query ?? intent.title ?? text;
+          const deleteNoteMatches = await services.supabase.findEntriesByQuery(deleteNoteQuery, 'learned');
+          if (deleteNoteMatches.length === 0) {
+            answer = `No note found matching "${deleteNoteQuery}".`;
+            break;
+          }
+          if (deleteNoteMatches.length > 1) {
+            const list = deleteNoteMatches.slice(0, 5).map((n) => `- ${n.title}`).join('\n');
+            answer = `Multiple notes match "${deleteNoteQuery}". Be more specific:\n${list}`;
+            break;
+          }
+          const noteToDelete = deleteNoteMatches[0];
+
+          // Delete vault file if it exists
+          if (noteToDelete.vaultPath) {
+            services.vault.deleteEntry(noteToDelete.vaultPath);
+          }
+
+          // Delete from Supabase
+          if (noteToDelete.id) {
+            await services.supabase.deleteEntry(noteToDelete.id);
+          }
+
+          answer = `Deleted note: "${noteToDelete.title}"`;
+          route = 'delete_note';
+          break;
+        }
+
+        case 'search_notes': {
+          const searchQuery = intent.update_query ?? intent.title ?? text;
+          let searchResults: import('../../types.js').ContextEntry[] = [];
+
+          // Try semantic search first via embeddings
+          const searchAvailable = await services.embeddings.isAvailable();
+          if (searchAvailable) {
+            const searchEmbedding = await services.embeddings.embed(searchQuery);
+            searchResults = await services.supabase.searchByEmbedding(searchEmbedding, {
+              type: 'learned',
+              limit: 10,
+            });
+          }
+
+          // Fall back to text search if no embedding results
+          if (searchResults.length === 0) {
+            searchResults = await services.supabase.findEntriesByQuery(searchQuery, 'learned');
+          }
+
+          if (searchResults.length === 0) {
+            answer = `No notes found matching "${searchQuery}".`;
+          } else {
+            const lines = searchResults.slice(0, 10).map((n, i) => {
+              const project = n.project ? ` [${n.project}]` : '';
+              const snippet = n.content.slice(0, 100).replace(/\n/g, ' ');
+              return `${i + 1}. **${n.title}**${project}\n   ${snippet}...`;
+            });
+            answer = `Found ${searchResults.length} note${searchResults.length === 1 ? '' : 's'}:\n\n${lines.join('\n\n')}`;
+          }
+          route = 'search_notes';
+          break;
+        }
+
         default:
           answer = 'Unrecognized intent.';
       }
@@ -210,12 +366,18 @@ export async function askRoutes(
     }
 
     // Store assistant response with metadata
-    await conversations.addMessage(conversationId, 'assistant', answer, {
-      route,
-      model,
-      sources,
-      intent: intent.intent,
-    });
+    try {
+      await conversations.addMessage(conversationId, 'assistant', answer, {
+        route,
+        model,
+        sources,
+        intent: intent.intent,
+      });
+    } catch (storeError) {
+      const msg = storeError instanceof Error ? storeError.message : String(storeError);
+      console.error(`[ask] Failed to store assistant message: ${msg}`);
+      // Still return the answer even if storage failed
+    }
 
     return reply.send({
       answer,

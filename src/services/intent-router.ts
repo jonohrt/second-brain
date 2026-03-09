@@ -1,6 +1,6 @@
 import type { ChatService, ChatMessage } from './ollama-chat.js';
 
-export type Intent = 'ask' | 'reminder' | 'capture_task' | 'update_task' | 'update_reminder' | 'capture_note' | 'list_tasks' | 'send_message';
+export type Intent = 'ask' | 'reminder' | 'capture_task' | 'update_task' | 'delete_task' | 'update_reminder' | 'delete_reminder' | 'list_reminders' | 'capture_note' | 'edit_note' | 'delete_note' | 'search_notes' | 'list_tasks' | 'send_message';
 
 export interface IntentResult {
   intent: Intent;
@@ -14,134 +14,140 @@ export interface IntentResult {
   reminder_time?: string;
   recipient?: string;
   message_body?: string;
+  list_name?: string;
 }
 
-const VALID_INTENTS: Intent[] = ['ask', 'reminder', 'capture_task', 'update_task', 'update_reminder', 'capture_note', 'list_tasks', 'send_message'];
+const VALID_INTENTS: Intent[] = ['ask', 'reminder', 'capture_task', 'update_task', 'delete_task', 'update_reminder', 'delete_reminder', 'list_reminders', 'capture_note', 'edit_note', 'delete_note', 'search_notes', 'list_tasks', 'send_message'];
 
-// Regex patterns for intent detection — ordered by specificity (most specific first)
-const INTENT_PATTERNS: Array<{ intent: Intent; pattern: RegExp }> = [
-  { intent: 'list_tasks', pattern: /\b(list|show|what(?:'s| are| do i have)|display|view)\b.*\b(tasks?|todos?|to-dos?)\b/i },
-  { intent: 'update_reminder', pattern: /\b(change|update|modify|reschedule|move|push)\b.*\b(reminder|alarm|alert)\b/i },
-  { intent: 'update_task', pattern: /\b(change|update|modify|edit)\b.*\b(task|todo|to-do)\b/i },
-  { intent: 'capture_task', pattern: /\b(capture|add|create|make|new)\b.*\b(task|todo|to-do)\b/i },
-  { intent: 'reminder', pattern: /\b(remind\s+me|set\s+(up\s+)?a?\s*reminder|(?:add|create|make)\s+(?:a\s+)?reminder|reminder\s+(for|to|at|on))\b/i },
-  { intent: 'send_message', pattern: /\b(send|text|imessage|message)\b.*\b(to|message)\b/i },
-  { intent: 'capture_note', pattern: /\b(remember\s+that|save\s+(this|that|a\s+note)|note\s+that|don'?t\s+forget)\b/i },
-];
+const CLASSIFY_SYSTEM_PROMPT = `You are an intent classifier for a personal productivity assistant. Classify the user's message into exactly one intent and extract relevant fields.
 
-const EXTRACT_SYSTEM_PROMPT = `You extract structured data from a user message that has already been classified as a specific intent. Extract the relevant fields as JSON.
+IMPORTANT: When the user is telling you a fact to store or remember, that is ALWAYS "capture_note" — never "ask". The "ask" intent is ONLY for questions or lookups where the user wants information back.
 
-For "capture_task": extract title, content (full description), project (if mentioned), tags
-For "reminder": extract title, reminder_time (ISO 8601 datetime)
-For "update_task": extract update_query (what task to find), new_description, new_title
-For "update_reminder": extract update_query (what reminder to find), new_title, reminder_time (ISO 8601)
-For "capture_note": extract title, content, tags
-For "send_message": extract recipient (phone number or contact name), message_body (the message text to send)
+Valid intents:
+- "ask": General questions or knowledge lookups where the user wants an answer. ONLY use this when the user is asking a question, NOT when they are telling you something to remember.
+- "reminder": Setting a new reminder (e.g. "remind me to...", "set a reminder for...", "remind me in 5 minutes...")
+- "capture_task": Creating a new task or todo (e.g. "add a task to...", "create a todo...", "I need to...")
+- "update_task": Modifying an existing task (e.g. "change the task...", "update the todo...")
+- "delete_task": Deleting/removing a task (e.g. "delete the task...", "remove the todo...", "cancel the task...")
+- "update_reminder": Modifying an existing reminder (e.g. "reschedule my reminder...", "change the reminder...")
+- "delete_reminder": Deleting/removing a reminder (e.g. "delete my reminder about...", "remove the reminder for...", "cancel the reminder...")
+- "list_reminders": Listing current reminders (e.g. "show my reminders", "what reminders do I have?", "list reminders")
+- "capture_note": Saving or remembering a piece of information. Use this whenever the user states a fact, gives you info to store, or tells you something to remember. Examples: "remember that...", "note that...", "save a note...", "the wifi password is...", "my garage code is 4521", "John's birthday is March 5th", "the spare key is under the mat"
+- "edit_note": Editing/updating an existing note (e.g. "edit my note about...", "update the note on...", "change my note about...")
+- "delete_note": Deleting/removing a note (e.g. "delete my note about...", "remove the note on...")
+- "search_notes": Searching or finding notes (e.g. "find my notes about...", "search notes for...", "what did I note about...")
+- "list_tasks": Listing current tasks/todos (e.g. "show my tasks", "what are my todos?")
+- "send_message": Sending a message to someone (e.g. "send a message to...", "text John...", "message John saying...", "message John, hey!")
 
-Reply with JSON only. Only include fields that are clearly present in the message.
+Respond with JSON only. Include only the fields that are clearly present in the message.
+
+Schema:
+{
+  "intent": one of the valid intents above,
+  "title": extracted title or summary (for tasks, notes, reminders),
+  "content": full description if different from title,
+  "project": project name if mentioned,
+  "tags": array of tags if mentioned,
+  "update_query": what to search for when updating/editing/deleting an existing item,
+  "new_description": new description for an update,
+  "new_title": new title for an update,
+  "reminder_time": date/time in ISO 8601 format,
+  "recipient": contact name or phone number for messages,
+  "message_body": the message text to send,
+  "list_name": specific reminder list name (for list_reminders),
+  "query": the search query if intent is "ask"
+}
+
 Today's date is ${new Date().toISOString().slice(0, 10)}.`;
+
+// Keyword signals used both as fallback (when LLM fails) and as validation
+// (to override LLM when it misclassifies an action as "ask")
+const KEYWORD_SIGNALS: Array<{ intent: Intent; keywords: RegExp }> = [
+  { intent: 'list_tasks', keywords: /\b(list|show|display|view)\b.*\b(tasks?|todos?)\b/i },
+  { intent: 'list_reminders', keywords: /\b(list|show|display|view)\b.*\b(reminders?|alarms?)\b/i },
+  { intent: 'delete_reminder', keywords: /\b(delete|remove|cancel)\b.*\b(reminder|alarm)\b/i },
+  { intent: 'delete_note', keywords: /\b(delete|remove)\b.*\b(note|learned|entry)\b/i },
+  { intent: 'edit_note', keywords: /\b(edit|update|change|modify)\b.*\b(note|learned|entry)\b/i },
+  { intent: 'search_notes', keywords: /\b(search|find|look\s*up)\b.*\b(notes?|learned|entries)\b/i },
+  { intent: 'update_reminder', keywords: /\b(change|update|modify|reschedule)\b.*\b(reminder|alarm)\b/i },
+  { intent: 'update_task', keywords: /\b(change|update|modify|edit)\b.*\b(task|todo)\b/i },
+  { intent: 'capture_task', keywords: /\b(capture|add|create|make|new)\b.*\b(task|todo)\b/i },
+  { intent: 'reminder', keywords: /\b(remind\s+me|set\s+a?\s*reminder|create\s+a?\s*reminder)\b/i },
+  { intent: 'send_message', keywords: /\b(send|text)\b.*\b(to|message)\b|\bmessage\b\s+\w/i },
+  { intent: 'capture_note', keywords: /\b(remember\s+that|save\s+a?\s*note|note\s+that|the\s+\w+\s+(password|code|key|number|address|pin)\s+(is|are)\b)/i },
+];
 
 export class IntentRouter {
   constructor(private chatService: ChatService) {}
 
-  private extractMessageFallback(text: string): Partial<IntentResult> {
-    // "send (a) message/text to X saying/that Y"
-    const m1 = text.match(/\b(?:send|text|imessage)\s+(?:a\s+)?(?:message|text|imessage)\s+to\s+(.+?)\s+(?:saying|that|to say)\s+(.+)/i);
-    if (m1) return { recipient: m1[1].trim(), message_body: m1[2].trim() };
-
-    // "send (a) message/text to X<separator>Y" where separator is colon, comma, or period
-    const m2 = text.match(/\b(?:send|text|imessage)\s+(?:a\s+)?(?:message|text|imessage)\s+to\s+(.+?)[,:.]\s*(.+)/i);
-    if (m2) return { recipient: m2[1].trim(), message_body: m2[2].trim() };
-
-    // "text/message X saying/that Y" (no "to")
-    const m3 = text.match(/\b(?:text|message)\s+([A-Z][\w\s]+?)\s+(?:saying|that|to say)\s+(.+)/i);
-    if (m3) return { recipient: m3[1].trim(), message_body: m3[2].trim() };
-
-    // "send X a message saying Y"
-    const m4 = text.match(/\b(?:send)\s+(.+?)\s+(?:a\s+)?(?:message|text)\s+(?:saying|that|to say)\s+(.+)/i);
-    if (m4) return { recipient: m4[1].trim(), message_body: m4[2].trim() };
-
-    return {};
+  private keywordMatch(text: string): Intent | null {
+    for (const { intent, keywords } of KEYWORD_SIGNALS) {
+      if (keywords.test(text)) {
+        return intent;
+      }
+    }
+    return null;
   }
 
-  private extractFallback(intent: Intent, text: string): Partial<IntentResult> {
-    if (intent === 'send_message') return this.extractMessageFallback(text);
-
-    // Strip common prefixes to get the actual content
-    const stripped = text
-      .replace(/^(capture|add|create|make|new|set|remind\s+me|remember\s+that|save|note\s+that|update|change|modify|edit)\s+(a\s+)?(task|todo|to-do|reminder|note)\s+(to|for|about|that)?\s*/i, '')
-      .trim();
-    const title = stripped || text.slice(0, 60);
-
-    // Try to extract "on the X project" or "on project X"
-    const projectMatch = text.match(/\b(?:on|for|in)\s+(?:the\s+)?(\w+)\s+project\b/i)
-      ?? text.match(/\bproject\s+(\w+)\b/i);
-    const project = projectMatch?.[1];
-
-    return { title, project };
+  private fallbackClassify(text: string): IntentResult {
+    const matched = this.keywordMatch(text);
+    return { intent: matched ?? 'ask', title: text.slice(0, 60) };
   }
 
   async classify(text: string, conversationHistory: Array<{ role: string; content: string }>): Promise<IntentResult> {
-    // Detect intent via regex patterns
-    let detectedIntent: Intent = 'ask';
-    for (const { intent, pattern } of INTENT_PATTERNS) {
-      if (pattern.test(text)) {
-        detectedIntent = intent;
-        break;
-      }
-    }
-
-    // For simple intents, no extraction needed
-    if (detectedIntent === 'ask' || detectedIntent === 'list_tasks') {
-      return { intent: detectedIntent };
-    }
-
-    // For send_message, always use regex — LLM extraction is unreliable
-    if (detectedIntent === 'send_message') {
-      return { intent: detectedIntent, ...this.extractMessageFallback(text) };
-    }
-
-    // Use LLM only for field extraction (not classification)
     try {
       const messages: ChatMessage[] = [
-        { role: 'system', content: EXTRACT_SYSTEM_PROMPT },
+        { role: 'system', content: CLASSIFY_SYSTEM_PROMPT },
       ];
 
+      // Include last 6 messages of conversation history for context
       if (conversationHistory.length > 0) {
-        const historyText = conversationHistory
-          .slice(-6)
+        const recent = conversationHistory.slice(-6);
+        const historyText = recent
           .map(m => `${m.role}: ${m.content}`)
           .join('\n');
         messages.push({
           role: 'system',
-          content: `Conversation history:\n${historyText}`,
+          content: `Recent conversation history:\n${historyText}`,
         });
       }
 
-      messages.push({ role: 'user', content: `Intent: ${detectedIntent}\nMessage: ${text}` });
+      messages.push({ role: 'user', content: text });
 
       const result = await this.chatService.chatWithFallback(messages, 'json');
       const parsed = JSON.parse(result.content);
 
-      // For send_message, check recipient instead of title
-      const hasRequiredFields = detectedIntent === 'send_message'
-        ? !!parsed.recipient
-        : !!parsed.title;
+      // Validate intent
+      let intent: Intent = VALID_INTENTS.includes(parsed.intent) ? parsed.intent : 'ask';
 
-      if (!hasRequiredFields) {
-        const fallback = this.extractFallback(detectedIntent, text);
-        // Fallback wins over empty/null LLM fields
-        const merged = { ...parsed };
-        for (const [k, v] of Object.entries(fallback)) {
-          if (v && !merged[k]) merged[k] = v;
+      // Keyword override: if the LLM said "ask" but keywords strongly match
+      // a specific action intent, trust the keywords
+      if (intent === 'ask') {
+        const keywordIntent = this.keywordMatch(text);
+        if (keywordIntent) {
+          console.log(`[intent] keyword override: LLM said "ask" but keywords matched "${keywordIntent}"`);
+          intent = keywordIntent;
         }
-        return { intent: detectedIntent, ...merged };
       }
 
-      return { intent: detectedIntent, ...parsed };
+      // Build result, only including fields that are present
+      const intentResult: IntentResult = { intent };
+      if (parsed.title) intentResult.title = parsed.title;
+      if (parsed.content) intentResult.content = parsed.content;
+      if (parsed.project) intentResult.project = parsed.project;
+      if (Array.isArray(parsed.tags) && parsed.tags.length > 0) intentResult.tags = parsed.tags;
+      if (parsed.update_query) intentResult.update_query = parsed.update_query;
+      if (parsed.new_description) intentResult.new_description = parsed.new_description;
+      if (parsed.new_title) intentResult.new_title = parsed.new_title;
+      if (parsed.reminder_time) intentResult.reminder_time = parsed.reminder_time;
+      if (parsed.recipient) intentResult.recipient = parsed.recipient;
+      if (parsed.message_body) intentResult.message_body = parsed.message_body;
+      if (parsed.list_name) intentResult.list_name = parsed.list_name;
+
+      return intentResult;
     } catch {
-      // Extraction failed — strip command prefix to get the actual content
-      return { intent: detectedIntent, ...this.extractFallback(detectedIntent, text) };
+      // LLM call failed — fall back to keyword matching
+      return this.fallbackClassify(text);
     }
   }
 }

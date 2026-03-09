@@ -78,6 +78,7 @@ export function createApp(config: Config, opts?: CreateAppOptions): FastifyInsta
         services,
         intentRouter,
         conversations: conversationService,
+        chatService,
       });
 
       // Conversation endpoints
