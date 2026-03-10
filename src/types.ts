@@ -1,4 +1,13 @@
-export type ContextType = 'branch_context' | 'pr_context' | 'decision' | 'learned' | 'session' | 'task';
+export const CONTEXT_TYPES = [
+  'branch_context',
+  'pr_context',
+  'decision',
+  'learned',
+  'session',
+  'task',
+] as const;
+
+export type ContextType = (typeof CONTEXT_TYPES)[number];
 
 export interface ContextEntry {
   id?: string;

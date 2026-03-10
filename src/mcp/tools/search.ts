@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { Services } from '../server.js';
-import type { ContextEntry } from '../../types.js';
+import { CONTEXT_TYPES, type ContextEntry } from '../../types.js';
 
 function formatEntryDetailed(entry: ContextEntry): string {
   const parts: string[] = [];
@@ -33,13 +33,13 @@ export function registerSearchTools(server: McpServer, services: Services): void
     'search_context',
     {
       description:
-        'Semantic search across all stored context entries (branch notes, PR summaries, decisions, learnings, sessions). Returns the most relevant entries for a given query.',
+        'Semantic search across all stored context entries (branch notes, PR summaries, decisions, learnings, sessions, tasks). Returns the most relevant entries for a given query. Note: for listing or filtering tasks by project/status, prefer the list_tasks tool instead.',
       inputSchema: {
         query: z.string().describe('The search query to find relevant context'),
         project: z.string().optional().describe('Filter by project name'),
         repo: z.string().optional().describe('Filter by repository name'),
         type: z
-          .enum(['branch_context', 'pr_context', 'decision', 'learned', 'session'])
+          .enum(CONTEXT_TYPES)
           .optional()
           .describe('Filter by entry type'),
         limit: z.number().optional().describe('Maximum number of results (default 10)'),

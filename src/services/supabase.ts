@@ -122,7 +122,13 @@ export class SupabaseService {
       .eq('type', 'task')
       .eq('metadata->>status', status);
 
-    if (opts?.project) query = query.eq('project', opts.project);
+    if (opts?.project) {
+      // Search project column AND title/content for the project term,
+      // so tasks that mention a project but weren't categorized still surface.
+      query = query.or(
+        `project.ilike.%${opts.project}%,title.ilike.%${opts.project}%,content.ilike.%${opts.project}%`
+      );
+    }
     query = query.order('created_at', { ascending: false });
     if (opts?.limit) query = query.limit(opts.limit);
 
@@ -131,14 +137,18 @@ export class SupabaseService {
     return (data ?? []).map(this.toContextEntry);
   }
 
-  async findTaskByTitle(titleSubstring: string): Promise<ContextEntry[]> {
-    const { data, error } = await this.client
+  async findTaskByTitle(titleSubstring: string, statusFilter?: string): Promise<ContextEntry[]> {
+    let query = this.client
       .from('context_entries')
       .select('*')
       .eq('type', 'task')
-      .eq('metadata->>status', 'open')
-      .ilike('title', `%${titleSubstring}%`);
+      .or(
+        `title.ilike.%${titleSubstring}%,content.ilike.%${titleSubstring}%`
+      );
 
+    if (statusFilter) query = query.eq('metadata->>status', statusFilter);
+
+    const { data, error } = await query;
     if (error) throw new Error(`Supabase query failed: ${error.message}`);
     return (data ?? []).map(this.toContextEntry);
   }
@@ -164,6 +174,86 @@ export class SupabaseService {
         entry: this.toContextEntry(row),
         similarity: row.similarity,
       }));
+  }
+
+  async deleteTask(id: string): Promise<void> {
+    const { error } = await this.client
+      .from('context_entries')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw new Error(`Supabase delete failed: ${error.message}`);
+  }
+
+  async deleteEntry(id: string): Promise<void> {
+    const { error } = await this.client
+      .from('context_entries')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw new Error(`Supabase delete failed: ${error.message}`);
+  }
+
+  async updateTask(
+    id: string,
+    updates: { title?: string; content?: string; status?: string; metadata?: Record<string, unknown> }
+  ): Promise<void> {
+    const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (updates.title !== undefined) row.title = updates.title;
+    if (updates.content !== undefined) row.content = updates.content;
+    if (updates.metadata !== undefined) row.metadata = updates.metadata;
+
+    const { error } = await this.client
+      .from('context_entries')
+      .update(row)
+      .eq('id', id);
+
+    if (error) throw new Error(`Supabase update failed: ${error.message}`);
+  }
+
+  async updateEntry(
+    id: string,
+    updates: { title?: string; content?: string; metadata?: Record<string, unknown> }
+  ): Promise<void> {
+    const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (updates.title !== undefined) row.title = updates.title;
+    if (updates.content !== undefined) row.content = updates.content;
+    if (updates.metadata !== undefined) row.metadata = updates.metadata;
+
+    const { error } = await this.client
+      .from('context_entries')
+      .update(row)
+      .eq('id', id);
+
+    if (error) throw new Error(`Supabase update failed: ${error.message}`);
+  }
+
+  async findTasksByQuery(query: string, project?: string): Promise<ContextEntry[]> {
+    let q = this.client
+      .from('context_entries')
+      .select('*')
+      .eq('type', 'task')
+      .or(`title.ilike.%${query}%,content.ilike.%${query}%`);
+
+    if (project) q = q.eq('project', project);
+
+    const { data, error } = await q.order('updated_at', { ascending: false });
+    if (error) throw new Error(`Supabase query failed: ${error.message}`);
+    return (data ?? []).map(this.toContextEntry);
+  }
+
+  async findEntriesByQuery(query: string, type?: string, project?: string): Promise<ContextEntry[]> {
+    let q = this.client
+      .from('context_entries')
+      .select('*')
+      .or(`title.ilike.%${query}%,content.ilike.%${query}%`);
+
+    if (type) q = q.eq('type', type);
+    if (project) q = q.eq('project', project);
+
+    const { data, error } = await q.order('updated_at', { ascending: false });
+    if (error) throw new Error(`Supabase query failed: ${error.message}`);
+    return (data ?? []).map(this.toContextEntry);
   }
 
   private toContextEntry(row: DbContextEntry): ContextEntry {
