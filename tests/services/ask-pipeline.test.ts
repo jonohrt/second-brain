@@ -43,7 +43,6 @@ describe('AskPipeline', () => {
   });
 
   it('routes brain question through embed + supabase + chatWithFallback', async () => {
-    vi.mocked(mocks.ollamaChat.classify).mockResolvedValue('brain');
     vi.mocked(mocks.embeddings.embed).mockResolvedValue([0.1, 0.2, 0.3]);
     vi.mocked(mocks.supabase.searchWithScores).mockResolvedValue([
       {
@@ -60,6 +59,7 @@ describe('AskPipeline', () => {
         similarity: 0.85,
       },
     ]);
+    vi.mocked(mocks.searxng.search).mockResolvedValue([]);
     vi.mocked(mocks.ollamaChat.chatWithFallback).mockResolvedValue({
       content: 'Based on your notes, TypeScript is...',
       model: 'qwen3.5:cloud',
@@ -79,11 +79,11 @@ describe('AskPipeline', () => {
     });
 
     expect(mocks.embeddings.embed).toHaveBeenCalledWith('What did I write about TypeScript?');
-    expect(mocks.searxng.search).not.toHaveBeenCalled();
   });
 
-  it('routes web question through searxng + chatWithFallback', async () => {
-    vi.mocked(mocks.ollamaChat.classify).mockResolvedValue('web');
+  it('routes web question when only web results are found', async () => {
+    vi.mocked(mocks.embeddings.embed).mockResolvedValue([0.1, 0.2]);
+    vi.mocked(mocks.supabase.searchWithScores).mockResolvedValue([]);
     vi.mocked(mocks.searxng.search).mockResolvedValue([
       { title: 'Quantum Physics Intro', url: 'https://example.com/quantum', content: 'Quantum is...', engine: 'google', score: 0.9 },
     ]);
@@ -103,9 +103,6 @@ describe('AskPipeline', () => {
       url: 'https://example.com/quantum',
       title: 'Quantum Physics Intro',
     });
-
-    expect(mocks.embeddings.embed).not.toHaveBeenCalled();
-    expect(mocks.supabase.searchWithScores).not.toHaveBeenCalled();
   });
 
   it('routes both question through brain + web + chatWithFallback', async () => {
@@ -180,7 +177,8 @@ describe('AskPipeline', () => {
   });
 
   it('includes model name from chatWithFallback result', async () => {
-    vi.mocked(mocks.ollamaChat.classify).mockResolvedValue('web');
+    vi.mocked(mocks.embeddings.embed).mockResolvedValue([0.1]);
+    vi.mocked(mocks.supabase.searchWithScores).mockResolvedValue([]);
     vi.mocked(mocks.searxng.search).mockResolvedValue([]);
     vi.mocked(mocks.ollamaChat.chatWithFallback).mockResolvedValue({
       content: 'Answer',

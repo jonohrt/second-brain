@@ -123,8 +123,6 @@ export class SupabaseService {
       .eq('metadata->>status', status);
 
     if (opts?.project) {
-      // Search project column AND title/content for the project term,
-      // so tasks that mention a project but weren't categorized still surface.
       query = query.or(
         `project.ilike.%${opts.project}%,title.ilike.%${opts.project}%,content.ilike.%${opts.project}%`
       );

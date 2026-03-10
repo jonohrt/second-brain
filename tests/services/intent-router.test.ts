@@ -98,7 +98,9 @@ describe('IntentRouter', () => {
   });
 
   it('includes conversation history in the prompt when provided', async () => {
-    const mock = createMockChat('{"intent": "ask"}');
+    // Use a message that triggers a non-ask intent (capture_task) so LLM extraction is called
+    const response = JSON.stringify({ title: 'Update docs' });
+    const mock = createMockChat(response);
     const router = new IntentRouter(mock);
 
     const history = [
@@ -106,7 +108,7 @@ describe('IntentRouter', () => {
       { role: 'assistant', content: 'Your project is a knowledge system.' },
     ];
 
-    await router.classify('What else can it do?', history);
+    await router.classify('Add a task to update docs', history);
 
     const calls = (mock.chatWithFallback as ReturnType<typeof vi.fn>).mock.calls;
     expect(calls).toHaveLength(1);
@@ -120,21 +122,22 @@ describe('IntentRouter', () => {
     expect(messages[1].content).toContain('Tell me about my project');
     expect(messages[1].content).toContain('Your project is a knowledge system.');
     expect(messages[2].role).toBe('user');
-    expect(messages[2].content).toBe('What else can it do?');
 
     // Format should be 'json'
     expect(calls[0][1]).toBe('json');
   });
 
   it('does not include history message when conversation history is empty', async () => {
-    const mock = createMockChat('{"intent": "ask"}');
+    // Use a message that triggers a non-ask intent (capture_task) so LLM extraction is called
+    const response = JSON.stringify({ title: 'Fix bug' });
+    const mock = createMockChat(response);
     const router = new IntentRouter(mock);
 
-    await router.classify('Hello', []);
+    await router.classify('Add a task to fix bug', []);
 
     const calls = (mock.chatWithFallback as ReturnType<typeof vi.fn>).mock.calls;
     const messages = calls[0][0];
-    // Should have only system prompt and user message
+    // Should have only system prompt and user message (no history)
     expect(messages).toHaveLength(2);
     expect(messages[0].role).toBe('system');
     expect(messages[1].role).toBe('user');

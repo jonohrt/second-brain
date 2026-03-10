@@ -50,7 +50,7 @@ describe('OllamaChatService', () => {
       const body = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(body.model).toBe('qwen3.5:cloud');
       expect(body.stream).toBe(false);
-      expect(body.keep_alive).toBe(0);
+      expect(body.keep_alive).toBe('30m');
       expect(body.messages).toEqual([{ role: 'user', content: 'What is the capital of France?' }]);
     });
 

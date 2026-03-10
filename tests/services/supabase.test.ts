@@ -305,13 +305,25 @@ describe('SupabaseService', () => {
       expect(query.mocks['order']).toHaveBeenCalledWith('created_at', { ascending: false });
     });
 
-    it('adds project filter when provided', async () => {
+    it('searches project, title, and content when project filter is provided', async () => {
       const query = createQueryMock({ data: [], error: null });
       mockFrom.mockReturnValue(query.chain);
 
-      await service.getTasksByStatus('open', { project: 'tesla' });
+      await service.getTasksByStatus('open', { project: 'work' });
 
-      expect(query.mocks['eq']).toHaveBeenCalledWith('project', 'tesla');
+      // Should use .or() to search across project, title, and content
+      expect(query.mocks['or']).toHaveBeenCalledWith(
+        'project.ilike.%work%,title.ilike.%work%,content.ilike.%work%'
+      );
+    });
+
+    it('does not add project filter when not provided', async () => {
+      const query = createQueryMock({ data: [], error: null });
+      mockFrom.mockReturnValue(query.chain);
+
+      await service.getTasksByStatus('open');
+
+      expect(query.mocks['or']).toBeUndefined();
     });
 
     it('applies limit when provided', async () => {
@@ -325,7 +337,7 @@ describe('SupabaseService', () => {
   });
 
   describe('findTaskByTitle', () => {
-    it('queries open tasks with title matching substring (case-insensitive)', async () => {
+    it('searches both title and content (case-insensitive)', async () => {
       const query = createQueryMock({ data: [], error: null });
       mockFrom.mockReturnValue(query.chain);
 
@@ -334,8 +346,30 @@ describe('SupabaseService', () => {
       expect(mockFrom).toHaveBeenCalledWith('context_entries');
       expect(query.mocks['select']).toHaveBeenCalledWith('*');
       expect(query.mocks['eq']).toHaveBeenCalledWith('type', 'task');
+      expect(query.mocks['or']).toHaveBeenCalledWith(
+        'title.ilike.%commit capture%,content.ilike.%commit capture%'
+      );
+    });
+
+    it('applies status filter when provided', async () => {
+      const query = createQueryMock({ data: [], error: null });
+      mockFrom.mockReturnValue(query.chain);
+
+      await service.findTaskByTitle('expense', 'open');
+
       expect(query.mocks['eq']).toHaveBeenCalledWith('metadata->>status', 'open');
-      expect(query.mocks['ilike']).toHaveBeenCalledWith('title', '%commit capture%');
+    });
+
+    it('does not filter by status when not provided', async () => {
+      const query = createQueryMock({ data: [], error: null });
+      mockFrom.mockReturnValue(query.chain);
+
+      await service.findTaskByTitle('expense');
+
+      // eq should only be called for type, not status
+      const eqCalls = query.mocks['eq']?.mock.calls ?? [];
+      const statusCalls = eqCalls.filter((c: unknown[]) => c[0] === 'metadata->>status');
+      expect(statusCalls).toHaveLength(0);
     });
   });
 
