@@ -133,7 +133,12 @@ export async function askRoutes(
             answer = 'Could not determine which task to update.';
             break;
           }
-          const matches = await services.supabase.findTaskByTitle(intent.update_query);
+          // Strip list numbering and project suffix from query
+          const updateQuery = intent.update_query
+            .replace(/^\d+\.\s*/, '')
+            .replace(/\s*\[[^\]]*\]\s*$/, '')
+            .trim();
+          const matches = await services.supabase.findTaskByTitle(updateQuery);
           if (matches.length === 0) {
             answer = `No task found matching "${intent.update_query}".`;
             break;
@@ -156,7 +161,13 @@ export async function askRoutes(
         }
 
         case 'delete_task': {
-          const deleteQuery = intent.update_query ?? intent.title ?? text;
+          const rawDeleteQuery = intent.update_query ?? intent.title ?? text;
+          // Strip list numbering (e.g. "9. ") and project suffix (e.g. " [work]") that
+          // appear in the displayed task list but aren't part of the actual title
+          const deleteQuery = rawDeleteQuery
+            .replace(/^\d+\.\s*/, '')
+            .replace(/\s*\[[^\]]*\]\s*$/, '')
+            .trim();
           const taskMatches = await services.supabase.findTaskByTitle(deleteQuery);
           if (taskMatches.length === 0) {
             answer = `No task found matching "${deleteQuery}".`;

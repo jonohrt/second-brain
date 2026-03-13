@@ -70,6 +70,7 @@ const KEYWORD_SIGNALS: Array<{ intent: Intent; keywords: RegExp }> = [
   { intent: 'edit_note', keywords: /\b(edit|update|change|modify)\b.*\b(note|learned|entry)\b/i },
   { intent: 'search_notes', keywords: /\b(search|find|look\s*up)\b.*\b(notes?|learned|entries)\b/i },
   { intent: 'update_reminder', keywords: /\b(change|update|modify|reschedule)\b.*\b(reminder|alarm)\b/i },
+  { intent: 'delete_task', keywords: /\b(delete|remove|cancel|complete|finish|done)\b.*\b(task|todo)\b/i },
   { intent: 'update_task', keywords: /\b(change|update|modify|edit)\b.*\b(task|todo)\b/i },
   { intent: 'capture_task', keywords: /\b(capture|add|create|make|new)\b.*\b(task|todo)\b/i },
   { intent: 'reminder', keywords: /\b(remind\s+me|set\s+a?\s*reminder|create\s+a?\s*reminder)\b/i },
