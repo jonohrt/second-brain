@@ -5,6 +5,7 @@ export const CONTEXT_TYPES = [
   'learned',
   'session',
   'task',
+  'bookmark',
 ] as const;
 
 export type ContextType = (typeof CONTEXT_TYPES)[number];

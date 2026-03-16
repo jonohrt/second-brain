@@ -70,6 +70,11 @@ export class VaultService {
         const slug = slugify(opts.title ?? 'untitled');
         return join(base, project, 'tasks', `${date}-${slug}.md`);
       }
+      case 'bookmark': {
+        const date = formatDate(opts.createdAt ?? new Date());
+        const slug = slugify(opts.title ?? 'untitled');
+        return join(base, project, 'bookmarks', `${date}-${slug}.md`);
+      }
     }
   }
 

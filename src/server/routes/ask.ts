@@ -372,6 +372,103 @@ export async function askRoutes(
           break;
         }
 
+        case 'save_link': {
+          const now = new Date();
+          const url = intent.url ?? text;
+          const linkContent = intent.description
+            ? `${url}\n\n${intent.description}`
+            : url;
+          const linkEntry: ContextEntry = {
+            type: 'bookmark',
+            title: intent.title ?? url.slice(0, 60),
+            content: linkContent,
+            project: intent.project ?? 'personal',
+            metadata: {
+              status: 'unread',
+              url,
+              linkType: intent.link_type ?? 'article',
+              tags: intent.tags ?? [],
+            },
+            createdAt: now,
+            updatedAt: now,
+          };
+          await captureEntry(linkEntry, services);
+          answer = `Saved link: "${linkEntry.title}"`;
+          route = 'save_link';
+          break;
+        }
+
+        case 'list_links': {
+          const bookmarks = await services.supabase.getBookmarksByStatus('unread', {
+            project: intent.project,
+            limit: 20,
+          });
+          if (bookmarks.length === 0) {
+            answer = 'No saved links to read/watch.';
+          } else {
+            const lines = bookmarks.map((b, i) => {
+              const meta = b.metadata as Record<string, unknown>;
+              const typeLabel = meta.linkType ? `[${meta.linkType}]` : '';
+              const project = b.project ? ` [${b.project}]` : '';
+              return `${i + 1}. ${typeLabel} ${b.title}${project}\n   ${meta.url}`;
+            });
+            answer = `You have ${bookmarks.length} saved link${bookmarks.length === 1 ? '' : 's'}:\n\n${lines.join('\n\n')}`;
+          }
+          route = 'list_links';
+          break;
+        }
+
+        case 'complete_link': {
+          const completeQuery = intent.update_query ?? intent.title ?? text;
+          const linkMatches = await services.supabase.findBookmarkByQuery(completeQuery, 'unread');
+          if (linkMatches.length === 0) {
+            answer = `No unread bookmark matching "${completeQuery}".`;
+            break;
+          }
+          if (linkMatches.length > 1) {
+            const list = linkMatches.map((b) => `- ${b.title}`).join('\n');
+            answer = `Multiple bookmarks match "${completeQuery}". Be more specific:\n${list}`;
+            break;
+          }
+          const linkToComplete = linkMatches[0];
+          linkToComplete.metadata = { ...linkToComplete.metadata, status: 'read', completedAt: new Date().toISOString() };
+          linkToComplete.updatedAt = new Date();
+
+          const completePath = services.vault.writeEntry(linkToComplete);
+          linkToComplete.vaultPath = completePath;
+
+          const completeAvailable = await services.embeddings.isAvailable();
+          if (completeAvailable) {
+            const embedding = await services.embeddings.embed(linkToComplete.content);
+            await services.supabase.upsertEntry(linkToComplete, embedding);
+          } else {
+            await services.supabase.upsertEntry(linkToComplete);
+          }
+          answer = `Marked as read: "${linkToComplete.title}"`;
+          route = 'complete_link';
+          break;
+        }
+
+        case 'delete_link': {
+          const deleteLinkQuery = intent.update_query ?? intent.title ?? text;
+          const deleteLinkMatches = await services.supabase.findBookmarkByQuery(deleteLinkQuery);
+          if (deleteLinkMatches.length === 0) {
+            answer = `No bookmark matching "${deleteLinkQuery}".`;
+            break;
+          }
+          if (deleteLinkMatches.length > 1) {
+            const list = deleteLinkMatches.map((b) => `- ${b.title}`).join('\n');
+            answer = `Multiple bookmarks match "${deleteLinkQuery}". Be more specific:\n${list}`;
+            break;
+          }
+          const linkToDelete = deleteLinkMatches[0];
+          if (linkToDelete.vaultPath) services.vault.deleteEntry(linkToDelete.vaultPath);
+          if (linkToDelete.id) await services.supabase.deleteEntry(linkToDelete.id);
+          answer = `Deleted bookmark: "${linkToDelete.title}"`;
+          route = 'delete_link';
+          break;
+        }
+
         default:
           answer = 'Unrecognized intent.';
       }

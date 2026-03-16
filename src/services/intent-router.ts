@@ -1,6 +1,6 @@
 import type { ChatService, ChatMessage } from './ollama-chat.js';
 
-export type Intent = 'ask' | 'reminder' | 'capture_task' | 'update_task' | 'delete_task' | 'update_reminder' | 'delete_reminder' | 'list_reminders' | 'capture_note' | 'edit_note' | 'delete_note' | 'search_notes' | 'list_tasks' | 'send_message';
+export type Intent = 'ask' | 'reminder' | 'capture_task' | 'update_task' | 'delete_task' | 'update_reminder' | 'delete_reminder' | 'list_reminders' | 'capture_note' | 'edit_note' | 'delete_note' | 'search_notes' | 'list_tasks' | 'send_message' | 'save_link' | 'list_links' | 'complete_link' | 'delete_link';
 
 export interface IntentResult {
   intent: Intent;
@@ -16,9 +16,12 @@ export interface IntentResult {
   recipient?: string;
   message_body?: string;
   list_name?: string;
+  url?: string;
+  link_type?: string;
+  description?: string;
 }
 
-const VALID_INTENTS: Intent[] = ['ask', 'reminder', 'capture_task', 'update_task', 'delete_task', 'update_reminder', 'delete_reminder', 'list_reminders', 'capture_note', 'edit_note', 'delete_note', 'search_notes', 'list_tasks', 'send_message'];
+const VALID_INTENTS: Intent[] = ['ask', 'reminder', 'capture_task', 'update_task', 'delete_task', 'update_reminder', 'delete_reminder', 'list_reminders', 'capture_note', 'edit_note', 'delete_note', 'search_notes', 'list_tasks', 'send_message', 'save_link', 'list_links', 'complete_link', 'delete_link'];
 
 const CLASSIFY_SYSTEM_PROMPT = `You are an intent classifier for a personal productivity assistant. Classify the user's message into exactly one intent and extract relevant fields.
 
@@ -39,6 +42,10 @@ Valid intents:
 - "search_notes": Searching or finding notes (e.g. "find my notes about...", "search notes for...", "what did I note about...")
 - "list_tasks": Listing current tasks/todos (e.g. "show my tasks", "what are my todos?"). Use "project" to filter to a specific project, or "exclude_project" to exclude tasks from a project (e.g. "show my personal tasks" → exclude_project: "work")
 - "send_message": Sending a message to someone (e.g. "send a message to...", "text John...", "message John saying...", "message John, hey!")
+- "save_link": Saving a link/URL to read or watch later (e.g. "save this link...", "bookmark this...", "I want to read this later...", "watch later...")
+- "list_links": Listing saved links/bookmarks (e.g. "show my reading list", "what links have I saved?", "show my bookmarks")
+- "complete_link": Marking a saved link as read/watched (e.g. "I finished reading...", "mark that article as read", "I watched that video")
+- "delete_link": Deleting a saved link (e.g. "remove that bookmark", "delete the saved link about...")
 
 Respond with JSON only. Include only the fields that are clearly present in the message.
 
@@ -57,7 +64,10 @@ Schema:
   "message_body": the message text to send,
   "exclude_project": project name to exclude from list (e.g. "work" when user asks for personal tasks),
   "list_name": specific reminder list name (for list_reminders),
-  "query": the search query if intent is "ask"
+  "query": the search query if intent is "ask",
+  "url": the URL being saved (for save_link),
+  "link_type": type of content - "article", "video", "podcast", or "other" (for save_link),
+  "description": optional description or notes about the link (for save_link)
 }
 
 Today's date is ${new Date().toISOString().slice(0, 10)}.`;
@@ -78,6 +88,10 @@ const KEYWORD_SIGNALS: Array<{ intent: Intent; keywords: RegExp }> = [
   { intent: 'reminder', keywords: /\b(remind\s+me|set\s+a?\s*reminder|create\s+a?\s*reminder)\b/i },
   { intent: 'send_message', keywords: /\b(send|text)\b.*\b(to|message)\b|\bmessage\b\s+\w/i },
   { intent: 'capture_note', keywords: /\b(remember\s+that|save\s+a?\s*note|note\s+that|the\s+\w+\s+(password|code|key|number|address|pin)\s+(is|are)\b)/i },
+  { intent: 'save_link', keywords: /\b(save|bookmark)\b.*\b(link|url|article|video)\b|\b(read|watch)\s+(later|this)\b/i },
+  { intent: 'list_links', keywords: /\b(list|show|display|view)\b.*\b(links?|bookmarks?|reading\s*list)\b|\b(what|which)\b.*\b(articles?|links?|bookmarks?|videos?)\b.*\bsaved\b/i },
+  { intent: 'complete_link', keywords: /\b(finished?|done|read|watched|completed?)\b.*\b(article|video|link|bookmark)\b|\bmark\b.*\b(read|watched)\b/i },
+  { intent: 'delete_link', keywords: /\b(delete|remove)\b.*\b(link|bookmark)\b/i },
 ];
 
 export class IntentRouter {
@@ -147,6 +161,9 @@ export class IntentRouter {
       if (parsed.message_body) intentResult.message_body = parsed.message_body;
       if (parsed.exclude_project) intentResult.exclude_project = parsed.exclude_project;
       if (parsed.list_name) intentResult.list_name = parsed.list_name;
+      if (parsed.url) intentResult.url = parsed.url;
+      if (parsed.link_type) intentResult.link_type = parsed.link_type;
+      if (parsed.description) intentResult.description = parsed.description;
 
       return intentResult;
     } catch {

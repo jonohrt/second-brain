@@ -13,6 +13,7 @@ import { registerStandupTools } from './tools/standup.js';
 import { registerNoteTools } from './tools/notes.js';
 import { registerEmailTools } from './tools/email.js';
 import { registerWebSearchTools } from './tools/web-search.js';
+import { registerBookmarkTools } from './tools/bookmarks.js';
 import { EmailService } from '../services/email.js';
 import { SearxngService } from '../services/searxng.js';
 
@@ -43,6 +44,7 @@ export function createServer(config: Config): McpServer {
   registerTaskTools(server, services);
   registerStandupTools(server);
   registerNoteTools(server, services);
+  registerBookmarkTools(server, services);
 
   if (config.email?.accounts && config.email.accounts.length > 0) {
     const emailService = new EmailService(config.email.accounts);

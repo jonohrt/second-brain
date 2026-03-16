@@ -247,6 +247,46 @@ export class SupabaseService {
     return (data ?? []).map(this.toContextEntry);
   }
 
+  async getBookmarksByStatus(
+    status: string,
+    opts?: { project?: string; linkType?: string; limit?: number }
+  ): Promise<ContextEntry[]> {
+    let query = this.client
+      .from('context_entries')
+      .select('*')
+      .eq('type', 'bookmark')
+      .eq('metadata->>status', status);
+
+    if (opts?.project) {
+      query = query.ilike('project', `%${opts.project}%`);
+    }
+    if (opts?.linkType) {
+      query = query.eq('metadata->>linkType', opts.linkType);
+    }
+    query = query.order('created_at', { ascending: false });
+    if (opts?.limit) query = query.limit(opts.limit);
+
+    const { data, error } = await query;
+    if (error) throw new Error(`Supabase query failed: ${error.message}`);
+    return (data ?? []).map(this.toContextEntry);
+  }
+
+  async findBookmarkByQuery(queryStr: string, statusFilter?: string): Promise<ContextEntry[]> {
+    let query = this.client
+      .from('context_entries')
+      .select('*')
+      .eq('type', 'bookmark')
+      .or(
+        `title.ilike.%${queryStr}%,content.ilike.%${queryStr}%`
+      );
+
+    if (statusFilter) query = query.eq('metadata->>status', statusFilter);
+
+    const { data, error } = await query;
+    if (error) throw new Error(`Supabase query failed: ${error.message}`);
+    return (data ?? []).map(this.toContextEntry);
+  }
+
   async findEntriesByQuery(query: string, type?: string, project?: string): Promise<ContextEntry[]> {
     let q = this.client
       .from('context_entries')
