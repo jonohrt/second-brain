@@ -10,6 +10,11 @@ import { registerPrTools } from './tools/pr.js';
 import { registerCaptureTools } from './tools/capture.js';
 import { registerTaskTools } from './tools/tasks.js';
 import { registerStandupTools } from './tools/standup.js';
+import { registerNoteTools } from './tools/notes.js';
+import { registerEmailTools } from './tools/email.js';
+import { registerWebSearchTools } from './tools/web-search.js';
+import { EmailService } from '../services/email.js';
+import { SearxngService } from '../services/searxng.js';
 
 export interface Services {
   supabase: SupabaseService;
@@ -37,6 +42,16 @@ export function createServer(config: Config): McpServer {
   registerCaptureTools(server, services);
   registerTaskTools(server, services);
   registerStandupTools(server);
+  registerNoteTools(server, services);
+
+  if (config.email?.accounts && config.email.accounts.length > 0) {
+    const emailService = new EmailService(config.email.accounts);
+    registerEmailTools(server, emailService);
+  }
+
+  const searxngUrl = config.searxng?.baseUrl ?? 'http://localhost:8888';
+  const searxng = new SearxngService(searxngUrl);
+  registerWebSearchTools(server, searxng);
 
   return server;
 }

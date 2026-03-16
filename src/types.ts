@@ -41,6 +41,16 @@ export interface ProjectConfig {
   relatedRepos?: string[];
 }
 
+export interface EmailAccountConfig {
+  provider: 'gmail' | 'microsoft';
+  label: string;
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  refreshToken: string;
+  tenantId?: string; // Microsoft only
+}
+
 export interface Config {
   vaultPath: string;
   contextDir: string;
@@ -66,6 +76,12 @@ export interface Config {
   server?: {
     port: number;
     apiToken: string;
+  };
+  email?: {
+    accounts: EmailAccountConfig[];
+  };
+  searxng?: {
+    baseUrl: string;
   };
 }
 

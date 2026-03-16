@@ -7,6 +7,7 @@ export interface IntentResult {
   title?: string;
   content?: string;
   project?: string;
+  exclude_project?: string;
   tags?: string[];
   update_query?: string;
   new_description?: string;
@@ -36,7 +37,7 @@ Valid intents:
 - "edit_note": Editing/updating an existing note (e.g. "edit my note about...", "update the note on...", "change my note about...")
 - "delete_note": Deleting/removing a note (e.g. "delete my note about...", "remove the note on...")
 - "search_notes": Searching or finding notes (e.g. "find my notes about...", "search notes for...", "what did I note about...")
-- "list_tasks": Listing current tasks/todos (e.g. "show my tasks", "what are my todos?")
+- "list_tasks": Listing current tasks/todos (e.g. "show my tasks", "what are my todos?"). Use "project" to filter to a specific project, or "exclude_project" to exclude tasks from a project (e.g. "show my personal tasks" → exclude_project: "work")
 - "send_message": Sending a message to someone (e.g. "send a message to...", "text John...", "message John saying...", "message John, hey!")
 
 Respond with JSON only. Include only the fields that are clearly present in the message.
@@ -54,6 +55,7 @@ Schema:
   "reminder_time": date/time in ISO 8601 format,
   "recipient": contact name or phone number for messages,
   "message_body": the message text to send,
+  "exclude_project": project name to exclude from list (e.g. "work" when user asks for personal tasks),
   "list_name": specific reminder list name (for list_reminders),
   "query": the search query if intent is "ask"
 }
@@ -143,6 +145,7 @@ export class IntentRouter {
       if (parsed.reminder_time) intentResult.reminder_time = parsed.reminder_time;
       if (parsed.recipient) intentResult.recipient = parsed.recipient;
       if (parsed.message_body) intentResult.message_body = parsed.message_body;
+      if (parsed.exclude_project) intentResult.exclude_project = parsed.exclude_project;
       if (parsed.list_name) intentResult.list_name = parsed.list_name;
 
       return intentResult;

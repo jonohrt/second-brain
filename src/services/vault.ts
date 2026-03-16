@@ -1,5 +1,5 @@
 import matter from 'gray-matter';
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import type { ContextEntry, ContextType, Frontmatter } from '../types.js';
 
@@ -111,6 +111,18 @@ export class VaultService {
     writeFileSync(filePath, output, 'utf-8');
 
     return filePath;
+  }
+
+  deleteEntry(filePath: string): boolean {
+    try {
+      if (existsSync(filePath)) {
+        unlinkSync(filePath);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
   }
 
   readEntry(filePath: string): ContextEntry {

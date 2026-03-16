@@ -114,7 +114,7 @@ export class SupabaseService {
 
   async getTasksByStatus(
     status: string,
-    opts?: { project?: string; limit?: number }
+    opts?: { project?: string; excludeProject?: string; limit?: number }
   ): Promise<ContextEntry[]> {
     let query = this.client
       .from('context_entries')
@@ -126,6 +126,13 @@ export class SupabaseService {
       query = query.or(
         `project.ilike.%${opts.project}%,title.ilike.%${opts.project}%,content.ilike.%${opts.project}%`
       );
+    }
+    if (opts?.excludeProject) {
+      // Use .or() to keep rows where project is null OR doesn't match,
+      // since NOT ILIKE excludes NULLs in PostgreSQL
+      query = query
+        .or(`project.is.null,project.not.ilike.%${opts.excludeProject}%`)
+        .not('title', 'ilike', `%${opts.excludeProject}%`);
     }
     query = query.order('created_at', { ascending: false });
     if (opts?.limit) query = query.limit(opts.limit);

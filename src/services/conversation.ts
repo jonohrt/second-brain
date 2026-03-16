@@ -7,6 +7,11 @@ export interface Conversation {
   updatedAt: Date;
 }
 
+export interface ConversationWithPreview extends Conversation {
+  messageCount: number;
+  lastMessagePreview: string | null;
+}
+
 export interface Message {
   id: string;
   conversationId: string;
@@ -30,6 +35,15 @@ interface DbMessage {
   content: string;
   metadata: Record<string, unknown>;
   created_at: string;
+}
+
+interface DbConversationWithPreview {
+  id: string;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+  last_message_preview: string | null;
 }
 
 export class ConversationService {
@@ -63,10 +77,13 @@ export class ConversationService {
     if (error) throw new Error(`Failed to add message: ${error.message}`);
 
     // Update conversation timestamp
-    await this.client
+    const { error: updateError } = await this.client
       .from('conversations')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', conversationId);
+    if (updateError) {
+      console.error(`Failed to update conversation timestamp: ${updateError.message}`);
+    }
 
     return this.toMessage(data);
   }
@@ -80,7 +97,7 @@ export class ConversationService {
     if (limit) query = query.limit(limit);
     const { data, error } = await query;
     if (error) throw new Error(`Failed to get messages: ${error.message}`);
-    return (data ?? []).map(this.toMessage);
+    return (data ?? []).map((row: DbMessage) => this.toMessage(row));
   }
 
   async getRecentMessages(conversationId: string, limit: number = 20): Promise<Message[]> {
@@ -91,7 +108,7 @@ export class ConversationService {
       .order('created_at', { ascending: false })
       .limit(limit);
     if (error) throw new Error(`Failed to get recent messages: ${error.message}`);
-    return (data ?? []).map(this.toMessage).reverse();
+    return (data ?? []).map((row: DbMessage) => this.toMessage(row)).reverse();
   }
 
   async listConversations(limit: number = 50): Promise<Conversation[]> {
@@ -101,7 +118,23 @@ export class ConversationService {
       .order('updated_at', { ascending: false })
       .limit(limit);
     if (error) throw new Error(`Failed to list conversations: ${error.message}`);
-    return (data ?? []).map(this.toConversation);
+    return (data ?? []).map((row: DbConversation) => this.toConversation(row));
+  }
+
+  async listConversationsWithPreview(limit: number = 50): Promise<ConversationWithPreview[]> {
+    const { data, error } = await this.client
+      .rpc('conversations_with_preview', { row_limit: limit });
+
+    if (error) throw new Error(`Failed to list conversations: ${error.message}`);
+
+    return (data ?? []).map((row: DbConversationWithPreview) => ({
+      id: row.id,
+      title: row.title,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+      messageCount: row.message_count ?? 0,
+      lastMessagePreview: row.last_message_preview ?? null,
+    }));
   }
 
   async deleteConversation(id: string): Promise<void> {
@@ -110,6 +143,23 @@ export class ConversationService {
       .delete()
       .eq('id', id);
     if (error) throw new Error(`Failed to delete conversation: ${error.message}`);
+  }
+
+  async deleteConversations(ids: string[]): Promise<{ deleted: number; errors: string[] }> {
+    const errors: string[] = [];
+    let deleted = 0;
+    for (const id of ids) {
+      const { error } = await this.client
+        .from('conversations')
+        .delete()
+        .eq('id', id);
+      if (error) {
+        errors.push(`${id}: ${error.message}`);
+      } else {
+        deleted++;
+      }
+    }
+    return { deleted, errors };
   }
 
   async getConversation(id: string): Promise<Conversation | null> {

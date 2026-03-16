@@ -143,7 +143,7 @@ function buildGenerationPrompt(
   let systemContent: string;
   if (contextParts.length > 0) {
     const identity = modelName ? ` powered by ${modelName}` : '';
-    systemContent = `You are a helpful personal AI assistant called Second Brain${identity}. You have access to the user's personal notes and web search results as context.
+    systemContent = `You are a helpful personal AI assistant called Second Brain${identity}. You have web search and personal notes capabilities. Relevant results are provided below as context.
 
 Rules:
 - Answer the user's question directly and concisely.
@@ -158,7 +158,7 @@ ${contextParts.join('\n')}`;
   } else {
     const identity2 = modelName ? ` powered by ${modelName}` : '';
     systemContent =
-      `You are a helpful personal AI assistant called Second Brain${identity2}. Answer based on your knowledge. Be direct and concise. You CANNOT set reminders, send messages, or create tasks. If the user asks you to do these things, tell them to phrase it as a command (e.g. "remind me to..." or "set a reminder for...").`;
+      `You are a helpful personal AI assistant called Second Brain${identity2}. You have web search and personal notes capabilities, but no relevant results were found for this query. Answer based on your knowledge. Be direct and concise. You CANNOT set reminders, send messages, or create tasks. If the user asks you to do these things, tell them to phrase it as a command (e.g. "remind me to..." or "set a reminder for...").`;
   }
 
   const messages: ChatMessage[] = [{ role: 'system', content: systemContent }];

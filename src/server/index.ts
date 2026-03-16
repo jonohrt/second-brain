@@ -18,6 +18,8 @@ import { SearxngService } from '../services/searxng.js';
 import { AskPipeline } from '../services/ask-pipeline.js';
 import { IntentRouter } from '../services/intent-router.js';
 import { ConversationService } from '../services/conversation.js';
+import { EmailService } from '../services/email.js';
+import { emailRoutes } from './routes/email.js';
 
 export interface CreateAppOptions {
   /** Callback to register routes inside the auth-protected scope */
@@ -55,7 +57,7 @@ export function createApp(config: Config, opts?: CreateAppOptions): FastifyInsta
   const services = opts?.services ?? buildServices(config);
 
   const chatService = buildChatService(config);
-  const searxng = new SearxngService('http://localhost:8888');
+  const searxng = new SearxngService(config.searxng?.baseUrl ?? 'http://localhost:8888');
   const modelName = config.openrouter?.model ?? 'Ollama';
   const askPipeline = opts?.askPipeline ?? new AskPipeline(chatService, searxng, services.embeddings, services.supabase, undefined, modelName);
   const intentRouter = opts?.intentRouter ?? new IntentRouter(chatService);
@@ -83,6 +85,12 @@ export function createApp(config: Config, opts?: CreateAppOptions): FastifyInsta
 
       // Conversation endpoints
       await scoped.register(conversationRoutes, { conversations: conversationService });
+
+      // Email endpoints (if configured)
+      if (config.email?.accounts && config.email.accounts.length > 0) {
+        const emailService = new EmailService(config.email.accounts);
+        await scoped.register(emailRoutes, { emailService });
+      }
 
       // Register any protected routes passed via options
       if (opts?.protectedRoutes) {

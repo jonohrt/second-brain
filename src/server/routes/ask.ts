@@ -196,7 +196,11 @@ export async function askRoutes(
         }
 
         case 'list_tasks': {
-          const tasks = await services.supabase.getTasksByStatus('open', { limit: 20 });
+          const tasks = await services.supabase.getTasksByStatus('open', {
+            project: intent.project,
+            excludeProject: intent.exclude_project,
+            limit: 20,
+          });
           if (tasks.length === 0) {
             answer = 'No open tasks found.';
           } else {

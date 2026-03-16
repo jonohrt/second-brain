@@ -65,6 +65,21 @@ export function loadConfig(configPath: string): Config {
     ? { apiKey: openrouter.api_key, model: openrouter.model }
     : undefined;
 
+  const emailRaw = parsed.email as { accounts?: Array<Record<string, string>> } | undefined;
+  const emailConfig = emailRaw?.accounts
+    ? {
+        accounts: emailRaw.accounts.map((a) => ({
+          provider: a.provider as 'gmail' | 'microsoft',
+          label: a.label,
+          clientId: a.client_id,
+          clientSecret: a.client_secret,
+          redirectUri: a.redirect_uri ?? 'http://localhost:3000/auth/callback',
+          refreshToken: a.refresh_token,
+          tenantId: a.tenant_id,
+        })),
+      }
+    : undefined;
+
   return {
     vaultPath: expandTilde(parsed.vault_path as string),
     contextDir: parsed.context_dir as string,
@@ -74,6 +89,7 @@ export function loadConfig(configPath: string): Config {
     projects: resolvedProjects,
     voice: voiceConfig,
     server: serverConfig,
+    email: emailConfig,
   };
 }
 
